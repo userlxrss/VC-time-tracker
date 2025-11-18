@@ -89,6 +89,10 @@ export function getSalaryPaymentsForUser(userId: number): SalaryPayment[] {
   return getSalaryPayments().filter(payment => payment.userId === userId);
 }
 
+export function getLeaveRequestsForUser(userId: number): LeaveRequest[] {
+  return getLeaveRequests().filter(request => request.userId === userId);
+}
+
 // Notifications
 export function getNotifications(): Notification[] {
   if (typeof window === "undefined") return [];

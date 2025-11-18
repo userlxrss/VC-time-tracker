@@ -1,22 +1,68 @@
+'use client';
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { useState, useEffect } from 'react';
 import "./globals.css";
+import { getTheme, setTheme, getCurrentUserId } from '@/lib/storage';
+import { dataSyncManager } from '@/lib/data-integration';
 
 const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "VC Time Tracker",
-  description: "HR Management System for Villanueva Creative",
-};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+
+    // Initialize theme
+    const savedTheme = getTheme();
+    setTheme(savedTheme);
+
+    // Initialize data sync manager for real-time updates across tabs
+    const unsubscribe = dataSyncManager.subscribe((event) => {
+      console.log('Data sync event:', event.type);
+    });
+
+    // Set up cross-tab synchronization
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key?.startsWith('vc_')) {
+        // Sync data across tabs
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Prevent flash of incorrect theme
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="theme-color" content="#3B82F6" />
+        <link rel="icon" href="/favicon.ico" />
+      </head>
+      <body className={inter.className}>
+        <div id="root">
+          {children}
+        </div>
+        <div id="toast-root" />
+        <div id="modal-root" />
+      </body>
     </html>
   );
 }

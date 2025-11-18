@@ -46,7 +46,7 @@ export interface SalaryPayment {
 export interface Notification {
   id: number;
   userId: number;
-  type: "leave_submitted" | "leave_approved" | "leave_denied" | "salary_paid" | "salary_confirmed" | "sick_leave";
+  type: "leave_submitted" | "leave_approved" | "leave_denied" | "salary_paid" | "salary_confirmed" | "sick_leave" | "salary" | "salary_reminder";
   title: string;
   message: string;
   isRead: boolean;
