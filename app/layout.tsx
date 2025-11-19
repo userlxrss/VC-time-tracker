@@ -24,9 +24,10 @@ export default function RootLayout({
     setTheme(savedTheme);
 
     // Initialize data sync manager for real-time updates across tabs
-    const unsubscribe = dataSyncManager.subscribe((event) => {
+    const handleDataSync = (event: any) => {
       console.log('Data sync event:', event.type);
-    });
+    };
+    dataSyncManager.addListener(handleDataSync);
 
     // Set up cross-tab synchronization
     const handleStorageChange = (e: StorageEvent) => {
@@ -39,7 +40,7 @@ export default function RootLayout({
     window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      unsubscribe();
+      dataSyncManager.removeListener(handleDataSync);
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);

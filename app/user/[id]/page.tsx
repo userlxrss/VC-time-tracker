@@ -54,6 +54,8 @@ export default function UserDetailPage() {
   const [currentMonthSalary, setCurrentMonthSalary] = useState<any>(null);
   const [salaryHistory, setSalaryHistory] = useState<any[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [timesheetView, setTimesheetView] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Integration hooks
   const { clockIn, clockOut, startBreak, endBreak, currentStatus } = useTimeTracking(userId);
@@ -94,7 +96,7 @@ export default function UserDetailPage() {
   }, [userId, currentUserId, selectedEmployeeId]);
 
   const setupDataSync = () => {
-    const unsubscribe = dataSyncManager.subscribe((event) => {
+    const listener = (event: any) => {
       switch (event.type) {
         case 'TIME_ENTRY_CREATED':
         case 'TIME_ENTRY_UPDATED':
@@ -108,9 +110,11 @@ export default function UserDetailPage() {
           loadSalaryData();
           break;
       }
-    });
+    };
 
-    return unsubscribe;
+    dataSyncManager.addListener(listener);
+
+    return () => dataSyncManager.removeListener(listener);
   };
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -126,9 +130,21 @@ export default function UserDetailPage() {
     const allSalaries = getSalaryRecordsForEmployee(targetEmployeeId);
     const history = allSalaries
       .filter(salary => salary.paymentMonth !== (currentSalary?.paymentMonth || ''))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime())
       .slice(0, 12);
     setSalaryHistory(history);
+  };
+
+  const regenerateSalaryHistory = () => {
+    if (typeof window !== 'undefined') {
+      // Clear old salary data
+      localStorage.removeItem('salary_records');
+      // Force regeneration
+      autoGenerateMonthlySalaries();
+      // Reload data
+      loadSalaryData();
+      showToast('Salary history regenerated successfully!', 'success');
+    }
   };
 
   // Time tracking handlers
@@ -393,149 +409,210 @@ export default function UserDetailPage() {
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="p-3 bg-gray-50">
         {/* Time Tracking Tab */}
         {activeTab === 'time-tracking' && (
-          <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-3">
+            {/* Welcome Banner */}
+            <div className="bg-gradient-to-r from-blue-50 to-white border border-blue-100 rounded-lg p-3">
+              <h2 className="text-base font-bold text-gray-800">🏢 Welcome to Your Flexible Workspace!</h2>
+              <p className="text-xs text-gray-600">Work whenever you're most productive. No fixed hours - just deliver 8 hours of quality work daily. 🚀</p>
+            </div>
+
+            {/* Today's Progress Card */}
+            <div className="bg-white shadow-sm rounded-lg p-4 border border-gray-200">
+              <h3 className="text-sm font-bold text-gray-800 mb-3">TODAY'S PROGRESS</h3>
+
+              {/* Progress Metrics */}
+              <div className="flex items-center justify-between mb-2 text-xs">
+                <span className="text-gray-600">⏰ {formatHours(userHours)} / 8h</span>
+                <span className="text-gray-600">🎯 Daily Goal</span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+                  style={{width: `${Math.min((userHours / 8) * 100, 100)}%`}}
+                />
+              </div>
+
+              {/* Status Badge + Progress Text Combined */}
+              <div className="flex items-center justify-between mb-3">
+                <span className={`px-3 py-1 rounded-full font-medium text-xs ${
+                  status.text === 'Clocked Out'
+                    ? 'bg-gray-100 text-gray-700'
+                    : status.text === 'Clocked In'
+                    ? 'bg-green-50 text-green-600 border border-green-200'
+                    : status.text === 'At Lunch'
+                    ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
+                    : 'bg-purple-50 text-purple-600 border border-purple-200'
+                }`}>
+                  {status.icon} {status.text}
+                </span>
+                <span className="text-xs text-gray-600">💪 {Math.min((userHours / 8) * 100, 100).toFixed(0)}% complete</span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-center gap-2 flex-wrap">
                 {status.text === 'Clocked Out' ? (
                   <button
                     onClick={() => handleTimeTrackingAction('clock_in')}
-                    className="flex flex-col items-center gap-2 p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-medium transition-all hover:shadow-md inline-flex items-center gap-2 text-sm"
                   >
-                    <Clock className="w-8 h-8 text-green-600" />
-                    <span className="font-medium text-green-700">Clock In</span>
+                    <Clock className="w-4 h-4" />
+                    Clock In
                   </button>
                 ) : (
                   <>
                     <button
                       onClick={() => handleTimeTrackingAction('start_break')}
-                      className="flex flex-col items-center gap-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors"
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md inline-flex items-center gap-1.5 text-xs"
                     >
-                      <Coffee className="w-8 h-8 text-yellow-600" />
-                      <span className="font-medium text-yellow-700">Start Break</span>
+                      <Coffee className="w-3.5 h-3.5" />
+                      Start Lunch
+                    </button>
+                    <button
+                      onClick={() => handleTimeTrackingAction('start_break')}
+                      className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md inline-flex items-center gap-1.5 text-xs"
+                    >
+                      <Coffee className="w-3.5 h-3.5" />
+                      Start Break
                     </button>
                     <button
                       onClick={() => handleTimeTrackingAction('clock_out')}
-                      className="flex flex-col items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all hover:shadow-md inline-flex items-center gap-1.5 text-xs"
                     >
-                      <Clock className="w-8 h-8 text-red-600" />
-                      <span className="font-medium text-red-700">Clock Out</span>
+                      <Clock className="w-3.5 h-3.5" />
+                      Clock Out
                     </button>
                   </>
                 )}
               </div>
-              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-blue-700">Today's Hours</span>
-                  <span className="text-lg font-bold text-blue-900">{formatHours(userHours)}</span>
+            </div>
+
+            {/* This Week's Summary */}
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                <div>
+                  <p className="text-[10px] text-gray-600 mb-0.5">📊 Total Hours</p>
+                  <p className="text-sm font-bold text-gray-800">{formatHours(userHours)} / 40h</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-600 mb-0.5">📅 Days Done</p>
+                  <p className="text-sm font-bold text-gray-800">0 / 5</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-600 mb-0.5">⭐ Avg/Day</p>
+                  <p className="text-sm font-bold text-gray-800">{userHours > 0 ? formatHours(userHours) : '0h'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-600 mb-0.5">🔥 Streak</p>
+                  <p className="text-sm font-bold text-gray-800">0 days</p>
                 </div>
               </div>
             </div>
 
-            {/* Today's Summary */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Today's Summary</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900">{formatHours(userHours)}</div>
-                  <div className="text-sm text-gray-500 mt-1">Total Hours</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-600">{status.text}</div>
-                  <div className="text-sm text-gray-500 mt-1">Current Status</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600">
-                    {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            {/* Activity Timeline - Only show when clocked in */}
+            {status.text !== 'Clocked Out' && (
+              <div className="bg-white shadow-sm rounded-lg p-4 border border-gray-200">
+                <h3 className="text-sm font-bold text-gray-800 mb-3">TODAY'S ACTIVITY</h3>
+                <div className="space-y-2">
+                  {/* Example timeline entries */}
+                  <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-gray-800">Clocked In</p>
+                      <p className="text-[10px] text-gray-500">{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                    <span className="text-[10px] text-green-600 font-medium">Active</span>
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">Current Time</div>
+                  <div className="text-center py-3">
+                    <p className="text-xs text-gray-400">Activity log will appear here</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
         {/* Leave Management Tab */}
         {activeTab === 'leave-management' && (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* Leave Balance */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Leave Balance</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <div className="text-2xl font-bold text-gray-900">{leaveBalance.total}</div>
-                  <div className="text-sm text-gray-500 mt-1">Total Days</div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <h2 className="text-sm font-bold text-gray-800 mb-3">📅 Leave Balance</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="text-center p-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                  <div className="text-lg font-bold text-gray-900">{leaveBalance.total}</div>
+                  <div className="text-[10px] text-gray-600 mt-0.5">Total Days</div>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{leaveBalance.used}</div>
-                  <div className="text-sm text-gray-500 mt-1">Used</div>
+                <div className="text-center p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                  <div className="text-lg font-bold text-green-700">{leaveBalance.used}</div>
+                  <div className="text-[10px] text-green-600 mt-0.5">Used</div>
                 </div>
-                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-600">{leaveBalance.pending}</div>
-                  <div className="text-sm text-gray-500 mt-1">Pending</div>
+                <div className="text-center p-3 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg border border-yellow-200">
+                  <div className="text-lg font-bold text-yellow-700">{leaveBalance.pending}</div>
+                  <div className="text-[10px] text-yellow-600 mt-0.5">Pending</div>
                 </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{leaveBalance.remaining}</div>
-                  <div className="text-sm text-gray-500 mt-1">Remaining</div>
+                <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                  <div className="text-lg font-bold text-blue-700">{leaveBalance.remaining}</div>
+                  <div className="text-[10px] text-blue-600 mt-0.5">Remaining</div>
                 </div>
               </div>
             </div>
 
             {/* Leave Request Form */}
             {isOwnPage && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Request Leave</h2>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <h2 className="text-sm font-bold text-gray-800 mb-3">✍️ Request Leave</h2>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
                       <input
                         type="date"
                         value={leaveFormData.startDate}
                         onChange={(e) => setLeaveFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
                       <input
                         type="date"
                         value={leaveFormData.endDate}
                         onChange={(e) => setLeaveFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Leave Type</label>
                     <select
                       value={leaveFormData.leaveType}
                       onChange={(e) => setLeaveFormData(prev => ({ ...prev, leaveType: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="annual">Annual Leave</option>
                       <option value="sick">Sick Leave</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Reason</label>
                     <textarea
                       value={leaveFormData.reason}
                       onChange={(e) => setLeaveFormData(prev => ({ ...prev, reason: e.target.value }))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows={2}
+                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter reason for leave..."
                     />
                   </div>
                   <button
                     onClick={handleLeaveSubmit}
-                    className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors font-medium"
                   >
-                    Submit Leave Request
+                    Submit Request
                   </button>
                 </div>
               </div>
@@ -543,32 +620,32 @@ export default function UserDetailPage() {
 
             {/* Pending Leave Requests (for bosses) */}
             {isBoss && pendingLeaveRequests.length > 0 && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Leave Requests</h2>
-                <div className="space-y-4">
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <h2 className="text-sm font-bold text-gray-800 mb-3">⏳ Pending Requests</h2>
+                <div className="space-y-2">
                   {pendingLeaveRequests.map((request) => (
-                    <div key={request.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium text-gray-900">{request.employeeName}</h3>
-                          <p className="text-sm text-gray-500">
+                    <div key={request.id} className="border border-gray-200 rounded-lg p-3">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <div className="flex-1">
+                          <h3 className="text-xs font-semibold text-gray-900">{request.employeeName}</h3>
+                          <p className="text-[10px] text-gray-500 mt-0.5">
                             {formatDate(request.startDate)} - {formatDate(request.endDate)} ({request.daysRequested} days)
                           </p>
-                          <p className="text-sm text-gray-600 mt-1">{request.reason}</p>
+                          <p className="text-xs text-gray-600 mt-1">{request.reason}</p>
                         </div>
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleLeaveApproval(request.id, 'approve')}
-                            className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                            className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-xs font-medium inline-flex items-center gap-1"
                           >
-                            <CheckCircle className="w-4 h-4 inline mr-1" />
+                            <CheckCircle className="w-3 h-3" />
                             Approve
                           </button>
                           <button
                             onClick={() => handleLeaveApproval(request.id, 'deny')}
-                            className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                            className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-xs font-medium inline-flex items-center gap-1"
                           >
-                            <XCircle className="w-4 h-4 inline mr-1" />
+                            <XCircle className="w-3 h-3" />
                             Deny
                           </button>
                         </div>
@@ -583,25 +660,25 @@ export default function UserDetailPage() {
 
         {/* Salary Tab */}
         {activeTab === 'salary' && (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* Current Month Salary */}
             {currentMonthSalary && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Month Salary</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <div className="text-sm text-gray-500">Payment Month</div>
-                    <div className="text-xl font-bold text-gray-900">{currentMonthSalary.paymentMonth}</div>
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <h2 className="text-sm font-bold text-gray-800 mb-3">💰 Current Month Salary</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
+                    <div className="text-[10px] text-blue-600 mb-0.5">Payment Month</div>
+                    <div className="text-base font-bold text-blue-900">{currentMonthSalary.paymentMonth}</div>
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Amount</div>
-                    <div className="text-xl font-bold text-green-600">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
+                    <div className="text-[10px] text-green-600 mb-0.5">Amount</div>
+                    <div className="text-base font-bold text-green-900">
                       {formatCurrency(currentMonthSalary.amount)}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Status</div>
-                    <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 border border-gray-200">
+                    <div className="text-[10px] text-gray-600 mb-0.5">Status</div>
+                    <div className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
                       currentMonthSalary.status === 'paid'
                         ? 'bg-green-100 text-green-800'
                         : 'bg-yellow-100 text-yellow-800'
@@ -609,31 +686,31 @@ export default function UserDetailPage() {
                       {currentMonthSalary.status === 'paid' ? 'Paid' : 'Pending'}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Work Period</div>
-                    <div className="text-sm text-gray-900">
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                    <div className="text-[10px] text-purple-600 mb-0.5">Work Period</div>
+                    <div className="text-[10px] text-purple-900">
                       {formatDate(currentMonthSalary.workPeriodStart)} - {formatDate(currentMonthSalary.workPeriodEnd)}
                     </div>
                   </div>
                 </div>
 
                 {isBoss && currentMonthSalary.status === 'pending' && (
-                  <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="mt-3 pt-3 border-t border-gray-200">
                     <button
                       onClick={handleSalaryConfirmation}
-                      className="w-full md:w-auto px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      className="px-4 py-2 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors font-medium inline-flex items-center gap-1"
                     >
-                      <DollarSign className="w-4 h-4 inline mr-2" />
+                      <DollarSign className="w-3 h-3" />
                       Mark as Paid
                     </button>
                   </div>
                 )}
 
                 {isOwnPage && currentMonthSalary.status === 'paid' && (
-                  <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="mt-3 pt-3 border-t border-gray-200">
                     <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle className="w-5 h-5" />
-                      <span className="font-medium">Salary paid and confirmed</span>
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="text-xs font-medium">Salary paid and confirmed</span>
                     </div>
                   </div>
                 )}
@@ -641,67 +718,365 @@ export default function UserDetailPage() {
             )}
 
             {/* Salary History */}
-            {salaryHistory.length > 0 && (
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Salary History</h2>
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-gray-800">📊 Salary History</h2>
+                <button
+                  onClick={regenerateSalaryHistory}
+                  className="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                >
+                  🔄 Refresh History
+                </button>
+              </div>
+              {salaryHistory.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Month</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Amount</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Paid Date</th>
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Type</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Description</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Work Period</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Amount</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Paid Date</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {salaryHistory.map((salary) => (
-                        <tr key={salary.id} className="border-b border-gray-100">
-                          <td className="py-3 px-4">{salary.paymentMonth}</td>
-                          <td className="py-3 px-4 font-medium">{formatCurrency(salary.amount)}</td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                              salary.status === 'paid'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}>
-                              {salary.status === 'paid' ? 'Paid' : 'Pending'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
-                            {salary.paidDate ? formatDate(salary.paidDate) : '-'}
-                          </td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-gray-100">
+                      {salaryHistory.map((salary) => {
+                        const isReimbursement = salary.id.toString().startsWith('reimb_');
+                        return (
+                          <tr key={salary.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="py-2 px-3">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                isReimbursement
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-purple-100 text-purple-700'
+                              }`}>
+                                {isReimbursement ? '🏢 Reimburse' : '💰 Salary'}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-xs font-semibold text-gray-800">
+                              {isReimbursement ? salary.paymentMonth : `${salary.paymentMonth} Salary`}
+                            </td>
+                            <td className="py-2 px-3 text-xs text-gray-600">
+                              {isReimbursement ? '-' : `${formatDate(salary.workPeriodStart)} - ${formatDate(salary.workPeriodEnd)}`}
+                            </td>
+                            <td className="py-2 px-3 text-xs font-bold text-green-700">{formatCurrency(salary.amount)}</td>
+                            <td className="py-2 px-3 text-xs text-gray-600">
+                              {salary.paidDate ? formatDate(salary.paidDate) : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="text-xs font-medium">No salary history yet</p>
+                  <p className="text-[10px] mt-1">Click "Refresh History" above to generate your payment records</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Timesheet Tab */}
         {activeTab === 'timesheet' && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Timesheet</h2>
-            <div className="text-center py-12 text-gray-500">
-              <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Detailed timesheet view will be displayed here</p>
-              <p className="text-sm mt-2">Including daily entries, breaks, and total hours</p>
+          <div className="space-y-3">
+            {/* Timesheet Header with Filters */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+                <h2 className="text-base font-bold text-gray-800">📋 Timesheet</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setTimesheetView('daily')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      timesheetView === 'daily'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Daily
+                  </button>
+                  <button
+                    onClick={() => setTimesheetView('weekly')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      timesheetView === 'weekly'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Weekly
+                  </button>
+                  <button
+                    onClick={() => setTimesheetView('monthly')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      timesheetView === 'monthly'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Monthly
+                  </button>
+                </div>
+              </div>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
+                  <p className="text-[10px] text-blue-600 mb-1">⏱️ Total Hours</p>
+                  <p className="text-lg font-bold text-blue-900">
+                    {(() => {
+                      const entries = getTimeEntriesForUser(userId);
+                      const totalHours = entries
+                        .filter(e => e.totalHours !== null)
+                        .reduce((sum, e) => sum + (e.totalHours || 0), 0);
+                      return formatHours(totalHours);
+                    })()}
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
+                  <p className="text-[10px] text-green-600 mb-1">✅ Days Worked</p>
+                  <p className="text-lg font-bold text-green-900">
+                    {getTimeEntriesForUser(userId).filter(e => e.status === 'clocked_out').length}
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                  <p className="text-[10px] text-purple-600 mb-1">☕ Break Time</p>
+                  <p className="text-lg font-bold text-purple-900">
+                    {(() => {
+                      const entries = getTimeEntriesForUser(userId);
+                      let totalBreakMinutes = 0;
+
+                      entries.forEach(entry => {
+                        // Calculate lunch break duration
+                        if (entry.lunchBreakStart && entry.lunchBreakEnd) {
+                          const lunchDuration = (new Date(entry.lunchBreakEnd).getTime() - new Date(entry.lunchBreakStart).getTime()) / (1000 * 60);
+                          totalBreakMinutes += lunchDuration;
+                        }
+
+                        // Calculate short breaks duration
+                        entry.shortBreaks.forEach(breakItem => {
+                          if (breakItem.end) {
+                            const breakDuration = (new Date(breakItem.end).getTime() - new Date(breakItem.start).getTime()) / (1000 * 60);
+                            totalBreakMinutes += breakDuration;
+                          }
+                        });
+                      });
+
+                      const hours = Math.floor(totalBreakMinutes / 60);
+                      const minutes = Math.round(totalBreakMinutes % 60);
+                      return totalBreakMinutes > 0 ? `${hours}h ${minutes}m` : '0m';
+                    })()}
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-3 border border-orange-200">
+                  <p className="text-[10px] text-orange-600 mb-1">🎯 Avg Hours</p>
+                  <p className="text-lg font-bold text-orange-900">
+                    {(() => {
+                      const entries = getTimeEntriesForUser(userId).filter(e => e.totalHours !== null);
+                      if (entries.length === 0) return '0h';
+                      const totalHours = entries.reduce((sum, e) => sum + (e.totalHours || 0), 0);
+                      const avgHours = totalHours / entries.length;
+                      return formatHours(avgHours);
+                    })()}
+                  </p>
+                </div>
+              </div>
             </div>
+
+            {/* Time Entries Table */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="text-left py-3 px-3 font-semibold text-gray-700 text-xs">Date</th>
+                      <th className="text-left py-3 px-3 font-semibold text-gray-700 text-xs">Clock In</th>
+                      <th className="text-left py-3 px-3 font-semibold text-gray-700 text-xs">Clock Out</th>
+                      <th className="text-left py-3 px-3 font-semibold text-gray-700 text-xs">Lunch</th>
+                      <th className="text-left py-3 px-3 font-semibold text-gray-700 text-xs">Breaks</th>
+                      <th className="text-left py-3 px-3 font-semibold text-gray-700 text-xs">Total Hours</th>
+                      <th className="text-left py-3 px-3 font-semibold text-gray-700 text-xs">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {getTimeEntriesForUser(userId)
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .slice(0, timesheetView === 'daily' ? 7 : timesheetView === 'weekly' ? 30 : 90)
+                      .map((entry) => (
+                        <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="py-3 px-3">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-900 text-xs">
+                                {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                              <span className="text-[10px] text-gray-500">
+                                {new Date(entry.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="text-xs text-gray-900">
+                              {new Date(entry.clockIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-xs text-gray-900">
+                            {entry.clockOut
+                              ? new Date(entry.clockOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                              : '-'}
+                          </td>
+                          <td className="py-3 px-3 text-xs text-gray-900">
+                            {entry.lunchBreakStart && entry.lunchBreakEnd
+                              ? `${Math.round(
+                                  (new Date(entry.lunchBreakEnd).getTime() - new Date(entry.lunchBreakStart).getTime()) /
+                                    (1000 * 60)
+                                )}m`
+                              : '-'}
+                          </td>
+                          <td className="py-3 px-3 text-xs text-gray-900">
+                            {entry.shortBreaks.length > 0 ? `${entry.shortBreaks.length}` : '-'}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="font-semibold text-gray-900 text-xs">
+                              {entry.totalHours ? formatHours(entry.totalHours) : '-'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                entry.status === 'clocked_out'
+                                  ? 'bg-gray-100 text-gray-700'
+                                  : entry.status === 'clocked_in'
+                                  ? 'bg-green-100 text-green-700'
+                                  : entry.status === 'on_lunch'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-purple-100 text-purple-700'
+                              }`}
+                            >
+                              {entry.status === 'clocked_out'
+                                ? '✓ Complete'
+                                : entry.status === 'clocked_in'
+                                ? '🟢 Active'
+                                : entry.status === 'on_lunch'
+                                ? '🍽️ Lunch'
+                                : '☕ Break'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+
+                {getTimeEntriesForUser(userId).length === 0 && (
+                  <div className="text-center py-12">
+                    <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm text-gray-500 font-medium">No time entries yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Clock in to start tracking your time</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Today's Activity Timeline */}
+            {(() => {
+              const today = new Date().toISOString().split('T')[0];
+              const todayEntry = getTimeEntriesForUser(userId).find(e => e.date === today);
+
+              if (!todayEntry) return null;
+
+              return (
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-sm font-bold text-gray-800 mb-3">⏰ Today's Activity Timeline</h3>
+                  <div className="space-y-2">
+                    {/* Clock In */}
+                    <div className="flex items-start gap-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5"></div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-gray-800">Clocked In</p>
+                          <span className="text-[10px] text-gray-500">
+                            {new Date(todayEntry.clockIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Lunch Break */}
+                    {todayEntry.lunchBreakStart && (
+                      <div className="flex items-start gap-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="w-2 h-2 bg-yellow-500 rounded-full mt-1.5"></div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold text-gray-800">Lunch Break</p>
+                            <span className="text-[10px] text-gray-500">
+                              {new Date(todayEntry.lunchBreakStart).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                              {todayEntry.lunchBreakEnd &&
+                                ` - ${new Date(todayEntry.lunchBreakEnd).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Short Breaks */}
+                    {todayEntry.shortBreaks.map((breakItem, index) => (
+                      <div key={index} className="flex items-start gap-3 p-2 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full mt-1.5"></div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold text-gray-800">Break #{index + 1}</p>
+                            <span className="text-[10px] text-gray-500">
+                              {new Date(breakItem.start).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                              {breakItem.end &&
+                                ` - ${new Date(breakItem.end).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+                              }
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Clock Out */}
+                    {todayEntry.clockOut && (
+                      <div className="flex items-start gap-3 p-2 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="w-2 h-2 bg-gray-500 rounded-full mt-1.5"></div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold text-gray-800">Clocked Out</p>
+                            <span className="text-[10px] text-gray-500">
+                              {new Date(todayEntry.clockOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-green-600 mt-0.5">
+                            ✓ Total: {todayEntry.totalHours ? formatHours(todayEntry.totalHours) : '0h'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!todayEntry.clockOut && (
+                      <div className="text-center py-3">
+                        <p className="text-xs text-blue-600">🔵 Currently {todayEntry.status === 'clocked_in' ? 'working' : todayEntry.status === 'on_lunch' ? 'on lunch' : 'on break'}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 
         {/* Analytics Tab */}
         {activeTab === 'analytics' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Analytics Dashboard</h2>
-              <div className="text-center py-12 text-gray-500">
-                <TrendingUp className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Analytics and reporting features will be displayed here</p>
-                <p className="text-sm mt-2">Including charts, trends, and productivity insights</p>
+          <div className="space-y-3">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <h2 className="text-sm font-bold text-gray-800 mb-3">📈 Analytics Dashboard</h2>
+              <div className="text-center py-8 text-gray-500">
+                <TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                <p className="text-xs font-medium">Analytics and reporting features</p>
+                <p className="text-[10px] mt-1">Charts, trends, and productivity insights coming soon</p>
               </div>
             </div>
           </div>

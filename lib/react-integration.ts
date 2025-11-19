@@ -50,10 +50,14 @@ import {
   getCurrentUserId,
   getTimeEntriesForUser,
   getLeaveRequests,
+  getLeaveRequestsForUser,
   getCurrentTimeEntry,
   getUsersWithStatus,
   getSalaryRecordsForEmployee,
-  getCurrentMonthSalary
+  getCurrentMonthSalary,
+  getNotifications,
+  getUnreadNotificationsForUser,
+  markNotificationAsRead
 } from './storage';
 
 // ==================== TIME TRACKING HOOK ====================
@@ -599,6 +603,86 @@ export function useTeamStatus(): TeamStatusState {
   return state;
 }
 
+// ==================== NOTIFICATIONS HOOK ====================
+
+export interface NotificationsState {
+  notifications: any[];
+  unreadCount: number;
+  isProcessing: boolean;
+}
+
+export interface NotificationsActions {
+  markAsRead: (notificationId: number) => void;
+  refreshNotifications: () => void;
+}
+
+export function useNotifications(currentUserId?: number): NotificationsState & NotificationsActions {
+  const userId = currentUserId || getCurrentUserId();
+
+  const [state, setState] = useState<NotificationsState>(() => {
+    const allNotifications = getNotifications().filter(n => n.userId === userId);
+    const unreadNotifications = getUnreadNotificationsForUser(userId);
+
+    return {
+      notifications: allNotifications,
+      unreadCount: unreadNotifications.length,
+      isProcessing: false
+    };
+  });
+
+  const refreshNotifications = useCallback(() => {
+    const allNotifications = getNotifications().filter(n => n.userId === userId);
+    const unreadNotifications = getUnreadNotificationsForUser(userId);
+
+    setState(prev => ({
+      ...prev,
+      notifications: allNotifications,
+      unreadCount: unreadNotifications.length
+    }));
+  }, [userId]);
+
+  // Set up real-time sync
+  useEffect(() => {
+    const handleDataSync = (event: DataSyncEvent) => {
+      if (event.type === 'notification') {
+        refreshNotifications();
+      }
+    };
+
+    dataSyncManager.addListener(handleDataSync);
+
+    return () => {
+      dataSyncManager.removeListener(handleDataSync);
+    };
+  }, [refreshNotifications]);
+
+  const markAsRead = useCallback((notificationId: number) => {
+    setState(prev => ({ ...prev, isProcessing: true }));
+
+    try {
+      markNotificationAsRead(notificationId);
+      refreshNotifications();
+
+      // Broadcast the change
+      dataSyncManager.broadcastEvent({
+        type: 'notification',
+        action: 'update',
+        userId
+      });
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    } finally {
+      setState(prev => ({ ...prev, isProcessing: false }));
+    }
+  }, [userId, refreshNotifications]);
+
+  return {
+    ...state,
+    markAsRead,
+    refreshNotifications
+  };
+}
+
 // ==================== UTILITY FUNCTIONS ====================
 
 function calculateTodayHours(userId: number): number {
@@ -728,13 +812,7 @@ function calculateTeamStatus(): TeamStatusState {
 }
 
 // ==================== EXPORT ALL HOOKS ====================
-
-export {
-  useTimeTracking,
-  useLeaveManagement,
-  useSalaryManagement,
-  useTeamStatus
-};
+// All hooks are already exported inline above
 
 // Export types for external use
 export type {
@@ -744,5 +822,7 @@ export type {
   LeaveManagementActions,
   SalaryManagementState,
   SalaryManagementActions,
-  TeamStatusState
+  TeamStatusState,
+  NotificationsState,
+  NotificationsActions
 };

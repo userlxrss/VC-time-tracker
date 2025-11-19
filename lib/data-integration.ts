@@ -229,31 +229,8 @@ export function handleClockIn(userId: number, notes?: string): ClockInOutResult 
     // Save the entry
     saveTimeEntry(newEntry);
 
-    // Create notification if late
-    if (newEntry.isLate) {
-      addNotification({
-        userId,
-        type: 'leave_denied', // Using existing type for late notification
-        title: 'Late Clock-In',
-        message: `You clocked in late at ${formatTime(newEntry.clockIn)}`,
-        isRead: false,
-        createdAt: now.toISOString()
-      });
-
-      // Notify managers
-      const managers = USERS.filter(u => u.id === 1 || u.id === 2); // Bosses
-      managers.forEach(manager => {
-        const user = USERS.find(u => u.id === userId);
-        addNotification({
-          userId: manager.id,
-          type: 'leave_submitted', // Using existing type
-          title: 'Late Clock-In Alert',
-          message: `${user?.firstName} clocked in late at ${formatTime(newEntry.clockIn)}`,
-          isRead: false,
-          createdAt: now.toISOString()
-        });
-      });
-    }
+    // Flexible work schedule - no late notifications needed
+    // Focus on total hours worked, not start time
 
     return {
       success: true,
@@ -984,10 +961,7 @@ export class Result<T = any> {
 }
 
 // ==================== EXPORT ALL INTEGRATION FUNCTIONS ====================
-
-export {
-  dataSyncManager
-};
+// dataSyncManager is already exported inline at line 806
 
 // Export type utilities for external use
 export type {

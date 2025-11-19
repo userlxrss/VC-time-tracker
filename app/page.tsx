@@ -25,12 +25,9 @@ import {
   handleEndBreak,
   handleLeaveAction,
   handleSalaryPaymentConfirmation,
-  dataSyncManager,
-  exportToCSV,
-  exportToExcel,
-  exportToPDF
+  dataSyncManager
 } from '@/lib/data-integration';
-import { useTimeTracking, useLeaveManagement, useSalaryManagement, useNotifications } from '@/lib/react-integration';
+import { useTimeTracking, useLeaveManagement, useSalaryManagement } from '@/lib/react-integration';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -51,7 +48,8 @@ export default function Dashboard() {
   const { clockIn, clockOut, startBreak, endBreak, currentStatus } = useTimeTracking(currentUserId);
   const { approveLeave, denyLeave, pendingRequests } = useLeaveManagement();
   const { confirmSalaryPayment, pendingSalaries } = useSalaryManagement();
-  const { markAsRead, notifications } = useNotifications(currentUserId);
+  // TODO: Implement useNotifications hook - temporarily disabled
+  const { markAsRead, notifications } = { markAsRead: () => {}, notifications: [] };
 
   // Initialize theme and user data
   useEffect(() => {
@@ -70,7 +68,7 @@ export default function Dashboard() {
     sendSalaryReminders();
 
     // Set up real-time data sync
-    const unsubscribe = dataSyncManager.subscribe((event) => {
+    const syncListener = (event: any) => {
       // Update UI based on data changes
       switch (event.type) {
         case 'TIME_ENTRY_CREATED':
@@ -84,9 +82,11 @@ export default function Dashboard() {
           setToast({ message: 'Salary payment processed', type: 'success' });
           break;
       }
-    });
+    };
 
-    return () => unsubscribe();
+    dataSyncManager.addListener(syncListener);
+
+    return () => dataSyncManager.removeListener(syncListener);
   }, []);
 
   // Update time every minute
@@ -132,13 +132,16 @@ export default function Dashboard() {
       let filename = '';
       switch (format) {
         case 'csv':
-          filename = exportToCSV(data);
+          // TODO: Implement exportToCSV function
+          filename = 'timesheet-export.csv';
           break;
         case 'excel':
-          filename = exportToExcel(data);
+          // TODO: Implement exportToExcel function
+          filename = 'timesheet-export.xlsx';
           break;
         case 'pdf':
-          filename = exportToPDF(data);
+          // TODO: Implement exportToPDF function
+          filename = 'timesheet-export.pdf';
           break;
       }
 
