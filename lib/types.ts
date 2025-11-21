@@ -14,7 +14,7 @@ export interface TimeEntry {
   lunchBreakEnd: string | null;
   shortBreaks: Array<{ start: string; end: string | null }>;
   totalHours: number | null;
-  status: "clocked_in" | "on_lunch" | "on_break" | "clocked_out";
+  status: "clocked_in" | "on_lunch" | "on_break" | "clocked_out" | "auto_closed";
   isLate: boolean;
   notes: string;
 }

@@ -6,7 +6,7 @@ export const USERS: User[] = [
   { id: 3, firstName: "Larina", email: "larina@vc.com" }
 ];
 
-export const CURRENT_USER_ID = 3; // Default: Larina
+export const CURRENT_USER_ID = 1; // Default: Ella (Boss)
 
 export const STORAGE_KEYS = {
   TIME_ENTRIES: "vc_time_entries",

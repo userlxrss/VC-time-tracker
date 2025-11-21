@@ -35,6 +35,63 @@ export function getCurrentTimeEntry(userId: number): TimeEntry | null {
   ) || null;
 }
 
+// Auto-close stale sessions (24 hours without clock-out)
+export function autoCloseStaleEntries(): void {
+  if (typeof window === "undefined") return;
+
+  const entries = getTimeEntries();
+  const now = new Date();
+  const MAX_SESSION_HOURS = 24;
+  let hasChanges = false;
+
+  entries.forEach(entry => {
+    // Only check entries that are still active (not clocked out or auto closed)
+    if (['clocked_in', 'on_lunch', 'on_break'].includes(entry.status)) {
+      const clockInTime = new Date(entry.clockIn);
+      const hoursSinceClockIn = (now.getTime() - clockInTime.getTime()) / (1000 * 60 * 60);
+
+      if (hoursSinceClockIn >= MAX_SESSION_HOURS) {
+        // Auto-close this entry
+        const autoClockOut = new Date(clockInTime.getTime() + MAX_SESSION_HOURS * 60 * 60 * 1000);
+        entry.clockOut = autoClockOut.toISOString();
+        entry.status = 'auto_closed';
+        entry.totalHours = MAX_SESSION_HOURS;
+
+        // Add system note about auto-closure
+        const systemNote = `[System] Auto-closed after 24 hours without clock-out`;
+        entry.notes = entry.notes ? `${systemNote}\n${entry.notes}` : systemNote;
+
+        // Close any open breaks
+        if (entry.lunchBreakStart && !entry.lunchBreakEnd) {
+          entry.lunchBreakEnd = autoClockOut.toISOString();
+        }
+        entry.shortBreaks = entry.shortBreaks.map(b => ({
+          ...b,
+          end: b.end || autoClockOut.toISOString()
+        }));
+
+        hasChanges = true;
+
+        // Create notification for employee
+        const notification: Notification = {
+          id: Date.now(),
+          userId: entry.userId,
+          type: 'salary_reminder',
+          title: 'Session Auto-Closed',
+          message: `Your session from ${new Date(entry.date).toLocaleDateString()} was automatically closed after 24 hours. Please remember to clock out.`,
+          isRead: false,
+          createdAt: now.toISOString()
+        };
+        saveNotification(notification);
+      }
+    }
+  });
+
+  if (hasChanges) {
+    localStorage.setItem(STORAGE_KEYS.TIME_ENTRIES, JSON.stringify(entries));
+  }
+}
+
 // Leave Requests
 export function getLeaveRequests(): LeaveRequest[] {
   if (typeof window === "undefined") return [];

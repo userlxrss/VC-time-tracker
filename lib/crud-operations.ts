@@ -23,7 +23,7 @@ export interface TimeEntryInput {
   notes?: string;
 }
 
-export class TimeEntryCRUD {
+class TimeEntryCRUD {
 
   // CREATE - Clock in operations
   static clockIn(userId: number, notes?: string): TimeEntry {
@@ -437,7 +437,7 @@ export interface LeaveRequestInput {
   reason: string;
 }
 
-export class LeaveManagementCRUD {
+class LeaveManagementCRUD {
 
   // CREATE - Enhanced leave request submission
   static createLeaveRequest(input: LeaveRequestInput): LeaveRequest {
@@ -807,7 +807,7 @@ export class LeaveManagementCRUD {
 
 // ==================== NOTIFICATION MANAGEMENT CRUD ====================
 
-export class NotificationManagementCRUD {
+class NotificationManagementCRUD {
 
   // CREATE - Automatic notification generation
   static createNotification(notification: Omit<Notification, 'id'>): Notification {
@@ -1136,7 +1136,7 @@ export interface SalaryPaymentInput {
   notes?: string;
 }
 
-export class SalaryPaymentCRUD {
+class SalaryPaymentCRUD {
 
   // CREATE - Generate monthly payment
   static generateMonthlyPayment(
@@ -1479,7 +1479,7 @@ export interface UserProfileInput {
   isActive?: boolean;
 }
 
-export class UserProfileCRUD {
+class UserProfileCRUD {
 
   // CREATE - Add new employees (for admins)
   static createEmployee(employeeData: UserProfileInput, createdBy: number): User {
@@ -1831,7 +1831,7 @@ export interface Report {
   expiresAt?: string;
 }
 
-export class ReportManagementCRUD {
+class ReportManagementCRUD {
 
   // CREATE - Generate various report types
   static generateReport(input: ReportInput, generatedBy: number): Report {
@@ -1946,7 +1946,7 @@ export interface Setting {
   updatedAt: string;
 }
 
-export class SettingsManagementCRUD {
+class SettingsManagementCRUD {
 
   // CREATE - Add new settings
   static createSetting(

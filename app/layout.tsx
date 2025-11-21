@@ -45,21 +45,16 @@ export default function RootLayout({
     };
   }, []);
 
-  // Prevent flash of incorrect theme
-  if (!mounted) {
-    return null;
-  }
-
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#3B82F6" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <div id="root">
-          {children}
+          {mounted ? children : null}
         </div>
         <div id="toast-root" />
         <div id="modal-root" />

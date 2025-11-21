@@ -28,6 +28,7 @@ import {
   dataSyncManager
 } from '@/lib/data-integration';
 import { useTimeTracking, useLeaveManagement, useSalaryManagement } from '@/lib/react-integration';
+import { seedSampleData } from '@/lib/seed-data';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -62,6 +63,9 @@ export default function Dashboard() {
       setCurrentUserIdState(savedUserId);
       setCurrentUser(USERS.find(u => u.id === savedUserId)!);
     }
+
+    // All users can access the main dashboard
+    const isBoss = savedUserId === 1 || savedUserId === 2;
 
     // Initialize salary system
     autoGenerateMonthlySalaries();
@@ -121,6 +125,17 @@ export default function Dashboard() {
     setCurrentUser(USERS.find(u => u.id === userId)!);
     setIsUserDropdownOpen(false);
     showToast(`Switched to ${USERS.find(u => u.id === userId)?.firstName}`);
+
+    // Redirect employees to their individual dashboard
+    const isBoss = userId === 1 || userId === 2;
+    if (!isBoss) {
+      router.push(`/user/${userId}`);
+    }
+  };
+
+  const seedData = () => {
+    seedSampleData();
+    showToast('Sample data seeded for Larina!', 'success');
   };
 
   const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
@@ -474,6 +489,12 @@ export default function Dashboard() {
                           Export as PDF
                         </button>
                         <hr className="my-2" />
+                        <button
+                          onClick={seedData}
+                          className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
+                        >
+                          🎯 Seed Sample Data for Larina
+                        </button>
                         <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                           Schedule Weekly Report
                         </button>
@@ -597,10 +618,10 @@ export default function Dashboard() {
                   <BarChart3 className="w-5 h-5" />
                   This Week Trends
                 </div>
-                <select className="date-selector">
-                  <option>Today</option>
-                  <option selected>This Week</option>
-                  <option>This Month</option>
+                <select className="date-selector" defaultValue="This Week">
+                  <option value="Today">Today</option>
+                  <option value="This Week">This Week</option>
+                  <option value="This Month">This Month</option>
                 </select>
               </div>
 
