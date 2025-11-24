@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Moon, Sun, Bell, Clock, Calendar, DollarSign, FileText, TrendingUp, Users, CheckCircle, XCircle, AlertCircle, Edit3, Save, X, Coffee, LayoutDashboard, MessageSquare } from 'lucide-react';
 import { USERS, PTO_ANNUAL_DAYS, MONTHLY_SALARY, STORAGE_KEYS } from '@/lib/constants';
 import {
@@ -50,6 +50,7 @@ import { useTimeTracking, useLeaveManagement, useSalaryManagement, useNotificati
 export default function UserDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const userId = parseInt(params.id as string);
   const currentUserId = getCurrentUserId();
   const currentUser = USERS.find(u => u.id === currentUserId)!;
@@ -143,13 +144,6 @@ export default function UserDetailPage() {
       loadLeaveRequests();
     }
   }, [selectedEmployeeId]);
-
-  // Set default tab based on user role
-  useEffect(() => {
-    if (activeTab === '') {
-      setActiveTab(isBoss ? 'timesheet' : 'time-tracking');
-    }
-  }, [isBoss, activeTab]);
 
   const loadLeaveRequests = () => {
     const targetEmployeeId = (isBoss && isOwnPage) ? userId : (isBoss ? selectedEmployeeId : userId);
@@ -688,6 +682,24 @@ export default function UserDetailPage() {
     { id: 'salary', label: 'Salary', icon: DollarSign },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp }
   ];
+
+  // Set default tab based on URL parameter or user role
+  useEffect(() => {
+    if (activeTab === '') {
+      // Check for tab parameter in URL
+      const tabFromUrl = searchParams.get('tab');
+
+      // Validate that the tab exists for this user
+      const availableTabs = tabs.map(tab => tab.id);
+      const validTab = tabFromUrl && availableTabs.includes(tabFromUrl) ? tabFromUrl : null;
+
+      if (validTab) {
+        setActiveTab(validTab);
+      } else {
+        setActiveTab(isBoss ? 'timesheet' : 'time-tracking');
+      }
+    }
+  }, [isBoss, activeTab, searchParams, tabs]);
 
   const pendingLeaveRequests = getPendingLeaveRequests();
 
@@ -1627,93 +1639,10 @@ export default function UserDetailPage() {
         {activeTab === 'salary' && (
           <div className="space-y-3">
             {isBoss ? (
-              // Boss Interface - Complete redesign
               <div className="space-y-3">
-                {/* Section 1: Employee Salary Overview */}
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <h2 className="text-sm font-bold text-gray-800 mb-3">💰 Employee Salary Overview</h2>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs">Employee</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs">Current Month</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs">Amount</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs">Status</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs">Work Period</th>
-                          <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {getAllSalaryRecords().map((employee) => {
-                          const currentSalary = employee.currentSalary;
-                          return (
-                            <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="py-3 px-4">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-xs ${employee.id === 1 || employee.id === 2 ? 'bg-blue-600' : 'bg-green-600'}`}>
-                                    {employee.firstName[0]}
-                                  </div>
-                                  <div>
-                                    <div className="font-medium text-gray-900 text-xs">{employee.firstName}</div>
-                                    <div className="text-[10px] text-gray-500">Operations</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 text-xs text-gray-900">{currentSalary?.paymentMonth || '-'}</td>
-                              <td className="py-3 px-4 text-xs font-bold text-green-700">
-                                {currentSalary ? formatCurrency(currentSalary.amount) : '-'}
-                              </td>
-                              <td className="py-3 px-4">
-                                {currentSalary && (
-                                  <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                    currentSalary.status === 'paid'
-                                      ? 'bg-green-100 text-green-800'
-                                      : currentSalary.status === 'pending'
-                                      ? 'bg-yellow-100 text-yellow-800'
-                                      : 'bg-red-100 text-red-800'
-                                  }`}>
-                                    {currentSalary.status === 'paid'
-                                      ? '✓ Paid - Confirmed'
-                                      : currentSalary.status === 'pending'
-                                      ? '⏳ Pending Confirmation'
-                                      : '⚠️ Not Paid Yet'
-                                    }
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-3 px-4 text-xs text-gray-600">
-                                {currentSalary ? `${formatDate(currentSalary.workPeriodStart)} - ${formatDate(currentSalary.workPeriodEnd)}` : '-'}
-                              </td>
-                              <td className="py-3 px-4">
-                                {currentSalary?.status === 'pending' ? (
-                                  <button
-                                    onClick={() => handleSalaryConfirmationForEmployee(employee.id)}
-                                    className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600 transition-colors font-medium"
-                                  >
-                                    ✓ Process
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => router.push(`/user/${employee.id}`)}
-                                    className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 transition-colors font-medium"
-                                  >
-                                    View
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-
-                {/* Section 2.5: Payment Form (Boss Only) */}
+                {/* Section 2: Create New Payment - BOSS ONLY */}
                 {isBoss && (
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <div className="bg-white rounded-lg border border-gray-200 p-4">
                   <h2 className="text-sm font-bold text-gray-800 mb-3">💳 Create New Payment</h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -1890,7 +1819,7 @@ export default function UserDetailPage() {
                 {isBoss && (
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                   <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-gray-800">📊 Payment History</h2>
+                    <h2 className="text-sm font-bold text-gray-800">📊 Salary History</h2>
                     <button
                       onClick={regenerateSalaryHistory}
                       className="px-3 py-1.5 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors font-medium"
@@ -1902,58 +1831,92 @@ export default function UserDetailPage() {
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                          <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Date</th>
-                          <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Employee</th>
                           <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Type</th>
+                          <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Description</th>
+                          <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Work Period</th>
                           <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Amount</th>
-                          <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Status</th>
+                          <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Paid Date</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {(() => {
-                          const allPayments = [];
-
-                          getAllSalaryRecords().forEach(employee => {
-                            employee.salaryHistory.forEach(salary => {
-                              allPayments.push({
-                                ...salary,
-                                employeeName: employee.firstName
-                              });
-                            });
-                          });
-
-                          return allPayments
-                            .sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime())
-                            .slice(0, 15)
-                            .map((payment) => {
-                              const isReimbursement = payment.id.toString().startsWith('reimb_');
-                              return (
-                                <tr key={`${payment.employeeName}-${payment.id}`} className="hover:bg-gray-50 transition-colors">
-                                  <td className="py-2 px-3 text-xs text-gray-900">{formatDate(payment.dueDate)}</td>
-                                  <td className="py-2 px-3 text-xs text-gray-900">{payment.employeeName}</td>
-                                  <td className="py-2 px-3">
-                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                      isReimbursement
-                                        ? 'bg-blue-100 text-blue-700'
-                                        : 'bg-purple-100 text-purple-700'
-                                    }`}>
-                                      {isReimbursement ? '🏢 Reimburse' : '💰 Salary'}
-                                    </span>
-                                  </td>
-                                  <td className="py-2 px-3 text-xs font-bold text-green-700">{formatCurrency(payment.amount)}</td>
-                                  <td className="py-2 px-3">
-                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                      payment.status === 'paid'
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-yellow-100 text-yellow-700'
-                                    }`}>
-                                      {payment.status === 'paid' ? '✓ Confirmed' : '⏳ Pending'}
-                                    </span>
-                                  </td>
-                                </tr>
-                              );
-                            });
-                        })()}
+                        {[
+                          {
+                            type: 'reimbursement',
+                            description: 'Walking Pad',
+                            workPeriodStart: null,
+                            workPeriodEnd: null,
+                            amount: 3859.00,
+                            paidDate: '2025-11-12',
+                            isReimbursement: true
+                          },
+                          {
+                            type: 'salary',
+                            description: 'October 2025 Salary',
+                            workPeriodStart: '2025-09-24',
+                            workPeriodEnd: '2025-10-23',
+                            amount: 32444.00,
+                            paidDate: '2025-10-25',
+                            isReimbursement: false
+                          },
+                          {
+                            type: 'salary',
+                            description: 'September 2025 Salary',
+                            workPeriodStart: '2025-08-24',
+                            workPeriodEnd: '2025-09-23',
+                            amount: 32444.00,
+                            paidDate: '2025-09-25',
+                            isReimbursement: false
+                          },
+                          {
+                            type: 'reimbursement',
+                            description: 'Monitor',
+                            workPeriodStart: null,
+                            workPeriodEnd: null,
+                            amount: 4639.00,
+                            paidDate: '2025-09-17',
+                            isReimbursement: true
+                          },
+                          {
+                            type: 'reimbursement',
+                            description: 'Ergonomic Chair',
+                            workPeriodStart: null,
+                            workPeriodEnd: null,
+                            amount: 5611.00,
+                            paidDate: '2025-09-09',
+                            isReimbursement: true
+                          },
+                          {
+                            type: 'reimbursement',
+                            description: 'Standing Desk',
+                            workPeriodStart: null,
+                            workPeriodEnd: null,
+                            amount: 5186.00,
+                            paidDate: '2025-09-09',
+                            isReimbursement: true
+                          }
+                        ].map((salary, index) => (
+                          <tr key={index} className="hover:bg-gray-50 transition-colors">
+                            <td className="py-2 px-3">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                salary.isReimbursement
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-purple-100 text-purple-700'
+                              }`}>
+                                {salary.isReimbursement ? '🏢 Reimburse' : '💰 Salary'}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-xs font-semibold text-gray-800">
+                              {salary.description}
+                            </td>
+                            <td className="py-2 px-3 text-xs text-gray-600">
+                              {salary.isReimbursement ? '-' : `${formatDate(salary.workPeriodStart)} - ${formatDate(salary.workPeriodEnd)}`}
+                            </td>
+                            <td className="py-2 px-3 text-xs font-bold text-green-700">{formatCurrency(salary.amount)}</td>
+                            <td className="py-2 px-3 text-xs text-gray-600">
+                              {formatDate(salary.paidDate)}
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>

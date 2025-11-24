@@ -531,40 +531,6 @@ class LeaveManagementCRUD {
     return limit ? sorted.slice(0, limit) : sorted;
   }
 
-  // UPDATE - Leave approval/denial workflow
-  static updateLeaveStatus(
-    leaveId: number,
-    status: "approved" | "denied",
-    approvedBy: number,
-    notes?: string
-  ): boolean {
-    const requests = getLeaveRequests();
-    const requestIndex = requests.findIndex(r => r.id === leaveId);
-
-    if (requestIndex === -1) return false;
-
-    const request = requests[requestIndex];
-    request.status = status;
-    request.approvedBy = approvedBy;
-
-    saveLeaveRequest(request);
-
-    // Notify employee
-    addNotification({
-      userId: request.userId,
-      type: status === 'approved' ? 'leave_approved' : 'leave_denied',
-      title: `Leave Request ${status === 'approved' ? 'Approved' : 'Denied'}`,
-      message: `Your leave request for ${request.startDate} - ${request.endDate} has been ${status}.`,
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      relatedId: leaveId,
-      relatedType: 'leave'
-    });
-
-    return true;
-  }
-
-  
   // UPDATE - Enhanced leave approval/denial workflow
   static updateLeaveStatus(
     leaveId: number,

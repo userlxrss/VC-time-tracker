@@ -289,6 +289,11 @@ export function getCurrentUserId(): number {
   return userId ? parseInt(userId) : CURRENT_USER_ID;
 }
 
+export function getCurrentUser() {
+  const userId = getCurrentUserId();
+  return USERS.find(u => u.id === userId);
+}
+
 export function setCurrentUserId(userId: number): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEYS.CURRENT_USER, userId.toString());

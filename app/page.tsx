@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Moon, Sun, Bell, Search, Filter, Download, ChevronRight, Users, Clock, Coffee, TrendingUp, CheckCircle, AlertCircle, Calendar, BarChart3, UserCheck, Settings, LogOut } from 'lucide-react';
+import { Moon, Sun, Search, Filter, Download, ChevronRight, Users, Clock, Coffee, TrendingUp, CheckCircle, AlertCircle, Calendar, BarChart3, UserCheck, Settings, LogOut, Bell } from 'lucide-react';
 import { USERS, CURRENT_USER_ID } from '@/lib/constants';
 import {
   getCurrentUserId,
@@ -10,6 +10,7 @@ import {
   getTheme,
   setTheme,
   getUnreadNotificationsForUser,
+  getNotifications,
   getTimeEntriesForUser,
   getLeaveRequestsForUser,
   getSalaryPaymentsForUser,
@@ -35,8 +36,6 @@ export default function Dashboard() {
   const [currentUserId, setCurrentUserIdState] = useState(CURRENT_USER_ID);
   const [currentUser, setCurrentUser] = useState(USERS.find(u => u.id === currentUserId)!);
   const [theme, setThemeState] = useState<'light' | 'dark'>('light');
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -45,8 +44,6 @@ export default function Dashboard() {
   const [dateRange, setDateRange] = useState('Today');
   const [showFilters, setShowFilters] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date());
 
@@ -54,9 +51,7 @@ export default function Dashboard() {
   const { clockIn, clockOut, startBreak, endBreak, currentStatus } = useTimeTracking(currentUserId);
   const { approveLeave, denyLeave, pendingRequests } = useLeaveManagement();
   const { confirmSalaryPayment, pendingSalaries } = useSalaryManagement();
-  // TODO: Implement useNotifications hook - temporarily disabled
-  const { markAsRead, notifications } = { markAsRead: () => {}, notifications: [] };
-
+  
   // Initialize theme and user data
   useEffect(() => {
     const savedTheme = getTheme();
@@ -107,21 +102,29 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // Update notifications
+  
+  // Handle hash scrolling for notification routing
   useEffect(() => {
-    const notifications = getUnreadNotificationsForUser(currentUserId);
-    setUnreadNotifications(notifications.length);
-  }, [currentUserId, notifications]);
+    const hash = window.location.hash;
+    if (hash === '#leave-requests') {
+      setTimeout(() => {
+        const element = document.getElementById('leave-requests');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Highlight the section briefly
+          element.style.backgroundColor = '#EFF6FF';
+          setTimeout(() => {
+            element.style.backgroundColor = '';
+          }, 2000);
+        }
+      }, 300);
+    }
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-
-      // Close notification dropdown if click is outside
-      if (isNotificationDropdownOpen && !target.closest('[data-notification-dropdown]')) {
-        setIsNotificationDropdownOpen(false);
-      }
 
       // Close user dropdown if click is outside
       if (isUserDropdownOpen && !target.closest('[data-user-dropdown]')) {
@@ -131,7 +134,7 @@ export default function Dashboard() {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isNotificationDropdownOpen, isUserDropdownOpen]);
+  }, [isUserDropdownOpen]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -158,43 +161,7 @@ export default function Dashboard() {
     }
   };
 
-  const markAllNotificationsAsRead = () => {
-    // This would typically update the notification status in storage
-    // For now, we'll just show a toast and close the dropdown
-    setUnreadNotifications(0);
-    setIsNotificationDropdownOpen(false);
-    showToast('All notifications marked as read', 'success');
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-      showToast(`Page ${currentPage - 1}`, 'success');
-    }
-  };
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-      showToast(`Page ${currentPage + 1}`, 'success');
-    }
-  };
-
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-    showToast(`Page ${page}`, 'success');
-  };
-
-  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
-
-  const togglePushNotifications = () => {
-    setPushNotificationsEnabled(!pushNotificationsEnabled);
-    showToast(
-      pushNotificationsEnabled ? 'Push notifications disabled' : 'Push notifications enabled',
-      'success'
-    );
-  };
-
+  
   const seedData = () => {
     seedSampleData();
     showToast('Sample data seeded for Larina!', 'success');
@@ -493,6 +460,7 @@ export default function Dashboard() {
   const currentUserStatus = getStatusDisplay(currentUserId);
   const isCurrentUserClockedIn = currentUserStatus.text === 'Clocked In';
 
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Toast Notification */}
@@ -541,59 +509,7 @@ export default function Dashboard() {
                 <Settings className="w-5 h-5" />
               </button>
 
-              <div className="relative" data-notification-dropdown>
-                <button
-                  onClick={() => setIsNotificationDropdownOpen(!isNotificationDropdownOpen)}
-                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors relative"
-                >
-                  <Bell className="w-5 h-5" />
-                  {unreadNotifications > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-                      {unreadNotifications}
-                    </span>
-                  )}
-                </button>
-
-                {isNotificationDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-200">
-                      <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
-                      {unreadNotifications > 0 && (
-                        <p className="text-xs text-gray-500">{unreadNotifications} unread</p>
-                      )}
-                    </div>
-
-                    <div className="max-h-64 overflow-y-auto">
-                      {unreadNotifications > 0 ? (
-                        <div className="p-4 text-center">
-                          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
-                            <Bell className="w-6 h-6 text-blue-600" />
-                          </div>
-                          <p className="text-sm text-gray-900 mb-1">You have notifications</p>
-                          <p className="text-xs text-gray-500">Click to view all notifications</p>
-                        </div>
-                      ) : (
-                        <div className="p-4 text-center">
-                          <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-2">
-                            <Bell className="w-6 h-6 text-gray-400" />
-                          </div>
-                          <p className="text-sm text-gray-500">No new notifications</p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="px-4 py-2 border-t border-gray-200">
-                      <button
-                        onClick={markAllNotificationsAsRead}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                      >
-                        Mark all as read
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
+              
               <div className="relative" data-user-dropdown>
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -635,7 +551,7 @@ export default function Dashboard() {
         
         <div className="dashboard-layout">
           <div className="main-content">
-            <div className="team-table">
+            <div id="leave-requests" className="team-table">
               <div className="table-header">
                 <div className="table-title">
                   <Users className="w-5 h-5" />
@@ -652,10 +568,7 @@ export default function Dashboard() {
                       className="search-input"
                     />
                   </div>
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="filter-btn"
-                  >
+                  <button className="filter-btn">
                     <Filter className="w-4 h-4" />
                     Filter
                   </button>
@@ -690,12 +603,6 @@ export default function Dashboard() {
                           className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
                         >
                           🎯 Seed Sample Data for Larina
-                        </button>
-                        <button
-                          onClick={() => showToast('Weekly report scheduled successfully!', 'success')}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          Schedule Weekly Report
                         </button>
                       </div>
                     )}
@@ -815,38 +722,9 @@ export default function Dashboard() {
                 Showing 1-{filteredUsers.length} of {filteredUsers.length} team members
               </div>
               <div className="pagination">
-                <button
-                  className={`page-btn ${currentPage === 1 ? 'disabled' : ''}`}
-                  onClick={goToPreviousPage}
-                  disabled={currentPage === 1}
-                >
-                  ← Previous
-                </button>
-                <button
-                  className={`page-btn ${currentPage === 1 ? 'active' : ''}`}
-                  onClick={() => goToPage(1)}
-                >
-                  1
-                </button>
-                <button
-                  className={`page-btn ${currentPage === 2 ? 'active' : ''}`}
-                  onClick={() => goToPage(2)}
-                >
-                  2
-                </button>
-                <button
-                  className={`page-btn ${currentPage === 3 ? 'active' : ''}`}
-                  onClick={() => goToPage(3)}
-                >
-                  3
-                </button>
-                <button
-                  className={`page-btn ${currentPage >= totalPages ? 'disabled' : ''}`}
-                  onClick={goToNextPage}
-                  disabled={currentPage >= totalPages}
-                >
-                  Next →
-                </button>
+                <button className="page-btn" disabled>← Previous</button>
+                <button className="page-btn active">1</button>
+                <button className="page-btn" disabled>Next →</button>
               </div>
             </div>
 
@@ -1885,17 +1763,8 @@ export default function Dashboard() {
                       <Bell className="w-5 h-5 text-gray-600 mr-3" />
                       <span className="text-sm text-gray-700">Push Notifications</span>
                     </div>
-                    <button
-                      onClick={togglePushNotifications}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                        pushNotificationsEnabled ? 'bg-blue-600' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          pushNotificationsEnabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
+                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                      <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
                     </button>
                   </div>
                 </div>

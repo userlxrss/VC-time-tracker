@@ -14,7 +14,7 @@ import {
   validateDateRange,
   validateEmail
 } from './crud-operations';
-import { getLeaveRequestsForUser, getSalaryRecordsForEmployee, getCurrentTimeEntry, getTimeEntriesForUser, getCurrentUserId } from './storage';
+import { getLeaveRequestsForUser, getSalaryRecordsForEmployee, getCurrentTimeEntry, getTimeEntriesForUser, getCurrentUserId, addNotification, getCurrentUser, formatDate } from './storage';
 import { USERS, CURRENT_USER_ID } from './constants';
 
 // ==================== LEAVE MANAGEMENT UI INTEGRATION ====================
@@ -48,6 +48,24 @@ export function useLeaveManagement(userId: number) {
         ...formData
       });
 
+      // Create notification for managers/bosses
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        const bossIds = [1, 2]; // Assuming users 1 and 2 are bosses
+        bossIds.forEach(bossId => {
+          addNotification({
+            userId: bossId,
+            type: 'leave_submitted',
+            title: 'New Leave Request',
+            message: `${currentUser.firstName} ${currentUser.lastName} submitted a leave request for ${formatDate(formData.startDate)} - ${formatDate(formData.endDate)}`,
+            isRead: false,
+            createdAt: new Date().toISOString(),
+            relatedId: leaveRequest.id.toString(),
+            relatedType: 'leave'
+          });
+        });
+      }
+
       showSuccessMessage('Leave request submitted successfully!');
       return leaveRequest;
     } catch (error) {
@@ -62,6 +80,7 @@ export function useLeaveManagement(userId: number) {
     if (confirmAction('Are you sure you want to approve this leave request?')) {
       const success = LeaveManagementCRUD.updateLeaveStatus(leaveId, 'approved', approvedBy);
       if (success) {
+        // The handleLeaveAction function in data-integration.ts already creates notifications
         showSuccessMessage('Leave request approved successfully!');
         return true;
       } else {
