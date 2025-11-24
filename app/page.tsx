@@ -45,6 +45,8 @@ export default function Dashboard() {
   const [dateRange, setDateRange] = useState('Today');
   const [showFilters, setShowFilters] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date());
 
@@ -162,6 +164,35 @@ export default function Dashboard() {
     setUnreadNotifications(0);
     setIsNotificationDropdownOpen(false);
     showToast('All notifications marked as read', 'success');
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      showToast(`Page ${currentPage - 1}`, 'success');
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+      showToast(`Page ${currentPage + 1}`, 'success');
+    }
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    showToast(`Page ${page}`, 'success');
+  };
+
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
+
+  const togglePushNotifications = () => {
+    setPushNotificationsEnabled(!pushNotificationsEnabled);
+    showToast(
+      pushNotificationsEnabled ? 'Push notifications disabled' : 'Push notifications enabled',
+      'success'
+    );
   };
 
   const seedData = () => {
@@ -621,7 +652,10 @@ export default function Dashboard() {
                       className="search-input"
                     />
                   </div>
-                  <button className="filter-btn">
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="filter-btn"
+                  >
                     <Filter className="w-4 h-4" />
                     Filter
                   </button>
@@ -657,7 +691,10 @@ export default function Dashboard() {
                         >
                           🎯 Seed Sample Data for Larina
                         </button>
-                        <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        <button
+                          onClick={() => showToast('Weekly report scheduled successfully!', 'success')}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
                           Schedule Weekly Report
                         </button>
                       </div>
@@ -778,9 +815,38 @@ export default function Dashboard() {
                 Showing 1-{filteredUsers.length} of {filteredUsers.length} team members
               </div>
               <div className="pagination">
-                <button className="page-btn" disabled>← Previous</button>
-                <button className="page-btn active">1</button>
-                <button className="page-btn" disabled>Next →</button>
+                <button
+                  className={`page-btn ${currentPage === 1 ? 'disabled' : ''}`}
+                  onClick={goToPreviousPage}
+                  disabled={currentPage === 1}
+                >
+                  ← Previous
+                </button>
+                <button
+                  className={`page-btn ${currentPage === 1 ? 'active' : ''}`}
+                  onClick={() => goToPage(1)}
+                >
+                  1
+                </button>
+                <button
+                  className={`page-btn ${currentPage === 2 ? 'active' : ''}`}
+                  onClick={() => goToPage(2)}
+                >
+                  2
+                </button>
+                <button
+                  className={`page-btn ${currentPage === 3 ? 'active' : ''}`}
+                  onClick={() => goToPage(3)}
+                >
+                  3
+                </button>
+                <button
+                  className={`page-btn ${currentPage >= totalPages ? 'disabled' : ''}`}
+                  onClick={goToNextPage}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next →
+                </button>
               </div>
             </div>
 
@@ -1819,8 +1885,17 @@ export default function Dashboard() {
                       <Bell className="w-5 h-5 text-gray-600 mr-3" />
                       <span className="text-sm text-gray-700">Push Notifications</span>
                     </div>
-                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                      <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
+                    <button
+                      onClick={togglePushNotifications}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        pushNotificationsEnabled ? 'bg-blue-600' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          pushNotificationsEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
                     </button>
                   </div>
                 </div>
