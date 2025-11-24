@@ -40,6 +40,11 @@
     height: 100%;
     overflow: auto;
   }
+
+  /* Hide System badge from notes - more specific selector to avoid hiding Status badges */
+  .max-w-\[120px\] span[class*="bg-orange-100"][class*="text-orange-700"] {
+    display: none !important;
+  }
 }
 
 .user-card {

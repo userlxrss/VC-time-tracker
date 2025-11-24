@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Moon, Sun, Bell, Clock, Calendar, DollarSign, FileText, TrendingUp, Users, CheckCircle, XCircle, AlertCircle, Edit3, Save, X, Coffee, LayoutDashboard, MessageSquare } from 'lucide-react';
-import { USERS, PTO_ANNUAL_DAYS, MONTHLY_SALARY } from '@/lib/constants';
+import { USERS, PTO_ANNUAL_DAYS, MONTHLY_SALARY, STORAGE_KEYS } from '@/lib/constants';
 import {
   getCurrentUserId,
   setCurrentUserId,
@@ -11,6 +11,9 @@ import {
   setTheme,
   getUnreadNotificationsForUser,
   getTimeEntriesForUser,
+  calculateBreakCount,
+  getConsistentBreakCount,
+  getConsistentTimeEntry,
   getLeaveRequestsForUser,
   getSalaryRecordsForEmployee,
   getCurrentMonthSalary,
@@ -90,6 +93,9 @@ export default function UserDetailPage() {
     reason: ''
   });
   const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'declined'>('all');
+  const [historyEmployeeFilter, setHistoryEmployeeFilter] = useState<number | 'all'>('all');
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<'all' | 'approved' | 'declined'>('all');
 
   // Note editing state
   const [editingNoteEntry, setEditingNoteEntry] = useState<number | null>(null);
@@ -146,7 +152,7 @@ export default function UserDetailPage() {
   }, [isBoss, activeTab]);
 
   const loadLeaveRequests = () => {
-    const targetEmployeeId = isBoss ? selectedEmployeeId : userId;
+    const targetEmployeeId = (isBoss && isOwnPage) ? userId : (isBoss ? selectedEmployeeId : userId);
     const requests = getLeaveRequestsForUser(targetEmployeeId);
     setLeaveRequests(requests.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
   };
@@ -304,6 +310,20 @@ export default function UserDetailPage() {
     }
   };
 
+  // Function to clear today's data for testing
+  const clearTodayData = () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // Friday 21/11
+      const entries = getTimeEntries();
+      const filteredEntries = entries.filter(entry => entry.date !== today);
+      localStorage.setItem(STORAGE_KEYS.TIME_ENTRIES, JSON.stringify(filteredEntries));
+      showToast('Friday 21/11 data cleared successfully!', 'success');
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      showToast(`Failed to clear Friday's data: ${error}`, 'error');
+    }
+  };
+
   // Leave management handlers
   const handleLeaveCancel = () => {
     // Reset form to initial state
@@ -345,7 +365,8 @@ export default function UserDetailPage() {
       }
 
       // Use LeaveManagementCRUD to create the leave request
-      const targetEmployeeId = getTargetEmployeeId();
+      // For bosses on their own page, always use their own userId (not selectedEmployeeId)
+      const targetEmployeeId = (isBoss && isOwnPage) ? userId : getTargetEmployeeId();
       const newLeaveRequest = LeaveManagementCRUD.createLeaveRequest({
         userId: targetEmployeeId,
         leaveType: leaveFormData.leaveType as 'annual' | 'sick',
@@ -355,7 +376,12 @@ export default function UserDetailPage() {
         reason: leaveFormData.reason
       });
 
-      showToast(`Leave request submitted for ${newLeaveRequest.daysRequested} day(s)`, 'success');
+      // Show different message for bosses vs employees
+      const isRequestingAsBoss = targetEmployeeId === 1 || targetEmployeeId === 2;
+      const message = isRequestingAsBoss
+        ? `Leave automatically approved for ${newLeaveRequest.daysRequested} day(s) - now visible on calendar`
+        : `Leave request submitted for ${newLeaveRequest.daysRequested} day(s)`;
+      showToast(message, 'success');
 
       // Reset form
       setLeaveFormData({
@@ -549,9 +575,9 @@ export default function UserDetailPage() {
 
   const getAllLeaveRequests = () => {
     const allRequests = [];
-    // Get requests from all employees
-    USERS.filter(u => u.id === 3).forEach(employee => {
-      const requests = getLeaveRequestsForUser(employee.id);
+    // Get requests from all users
+    USERS.forEach(user => {
+      const requests = getLeaveRequestsForUser(user.id);
       allRequests.push(...requests);
     });
     return allRequests.map(request => ({
@@ -743,6 +769,13 @@ export default function UserDetailPage() {
                         {user.firstName} {user.id === currentUserId && '(current)'}
                       </button>
                     ))}
+                    <hr className="my-2" />
+                    <button
+                      onClick={clearTodayData}
+                      className="w-full px-3 py-2 text-left hover:bg-red-50 transition-colors text-sm text-red-600"
+                    >
+                      🗑️ Clear Friday Data
+                    </button>
                   </div>
                 )}
               </div>
@@ -1091,52 +1124,7 @@ export default function UserDetailPage() {
                   })()}
                 </div>
 
-                {/* Section 2: Leave Overview Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="bg-white rounded-lg border border-gray-200 p-3">
-                    <div className="text-[10px] text-gray-600 mb-1">Pending Requests</div>
-                    <div className="text-lg font-bold text-yellow-700">
-                      {getAllLeaveRequests().filter(req => req.status === 'pending').length}
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg border border-gray-200 p-3">
-                    <div className="text-[10px] text-gray-600 mb-1">Approved This Month</div>
-                    <div className="text-lg font-bold text-green-700">
-                      {(() => {
-                        const currentMonth = new Date().getMonth();
-                        const currentYear = new Date().getFullYear();
-                        return getAllLeaveRequests().filter(req => {
-                          const reqDate = new Date(req.startDate);
-                          return req.status === 'approved' &&
-                                 reqDate.getMonth() === currentMonth &&
-                                 reqDate.getFullYear() === currentYear;
-                        }).length;
-                      })()}
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg border border-gray-200 p-3">
-                    <div className="text-[10px] text-gray-600 mb-1">Employees on Leave Today</div>
-                    <div className="text-lg font-bold text-blue-700">
-                      {(() => {
-                        const today = new Date().toISOString().split('T')[0];
-                        return getAllLeaveRequests().filter(req => {
-                          return req.status === 'approved' &&
-                                 req.startDate <= today &&
-                                 req.endDate >= today;
-                        }).length;
-                      })()}
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-lg border border-gray-200 p-3">
-                    <div className="text-[10px] text-gray-600 mb-1">Total Leave Days Used</div>
-                    <div className="text-lg font-bold text-purple-700">
-                      {getAllLeaveRequests()
-                        .filter(req => req.status === 'approved')
-                        .reduce((sum, req) => sum + req.daysRequested, 0)}
-                    </div>
-                  </div>
-                </div>
-
+  
                 {/* Section 3: Employee Leave Balance */}
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
                   <h2 className="text-sm font-bold text-gray-800 mb-3">Employee Leave Balance</h2>
@@ -1193,29 +1181,57 @@ export default function UserDetailPage() {
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-sm font-bold text-gray-800">Leave Request History</h2>
                     <div className="flex gap-2 text-xs">
-                      <select className="px-2 py-1 border border-gray-300 rounded text-xs">
-                        <option>All Employees</option>
-                        {USERS.filter(u => u.id === 3).map(emp => (
-                          <option key={emp.id}>{emp.firstName}</option>
+                      <select
+                        value={historyEmployeeFilter}
+                        onChange={(e) => setHistoryEmployeeFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+                        className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="all">All Employees</option>
+                        {USERS.map(emp => (
+                          <option key={emp.id} value={emp.id}>{emp.firstName}</option>
                         ))}
                       </select>
-                      <select className="px-2 py-1 border border-gray-300 rounded text-xs">
-                        <option>All Status</option>
-                        <option>Approved</option>
-                        <option>Declined</option>
+                      <select
+                        value={historyStatusFilter}
+                        onChange={(e) => setHistoryStatusFilter(e.target.value as any)}
+                        className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="approved">Approved</option>
+                        <option value="declined">Declined</option>
                       </select>
                     </div>
                   </div>
                   {(() => {
                     const allRequests = getAllLeaveRequests();
-                    const historyRequests = allRequests.filter(req => req.status !== 'pending');
+                    let historyRequests = allRequests.filter(req => req.status !== 'pending');
+
+                    // Apply employee filter
+                    if (historyEmployeeFilter !== 'all') {
+                      historyRequests = historyRequests.filter(req => req.userId === historyEmployeeFilter);
+                    }
+
+                    // Apply status filter
+                    if (historyStatusFilter === 'approved') {
+                      historyRequests = historyRequests.filter(req => req.status === 'approved' || req.status === 'auto_approved');
+                    } else if (historyStatusFilter === 'declined') {
+                      historyRequests = historyRequests.filter(req => req.status === 'denied');
+                    }
 
                     if (historyRequests.length === 0) {
                       return (
                         <div className="text-center py-8 text-gray-500">
                           <FileText className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                          <p className="text-xs font-medium">No leave request history</p>
-                          <p className="text-[10px] mt-1">No approved or declined requests yet</p>
+                          <p className="text-xs font-medium">
+                            {historyEmployeeFilter !== 'all' || historyStatusFilter !== 'all'
+                              ? 'No matching requests found'
+                              : 'No leave request history'}
+                          </p>
+                          <p className="text-[10px] mt-1">
+                            {historyEmployeeFilter !== 'all' || historyStatusFilter !== 'all'
+                              ? 'Try adjusting the filters'
+                              : 'No approved or declined requests yet'}
+                          </p>
                         </div>
                       );
                     }
@@ -1276,6 +1292,138 @@ export default function UserDetailPage() {
                     );
                   })()}
                 </div>
+
+                {/* Boss Own Leave Request Section */}
+                {isOwnPage && (
+                  <>
+                    {/* Leave Request Form for Boss */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                      <h2 className="text-sm font-bold text-gray-800 mb-3">
+                        ✍️ Request My Leave
+                      </h2>
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+                            <input
+                              type="date"
+                              value={leaveFormData.startDate}
+                              onChange={(e) => setLeaveFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
+                            <input
+                              type="date"
+                              value={leaveFormData.endDate}
+                              onChange={(e) => setLeaveFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                              className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Leave Type</label>
+                          <select
+                            value={leaveFormData.leaveType}
+                            onChange={(e) => setLeaveFormData(prev => ({ ...prev, leaveType: e.target.value }))}
+                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="annual">Annual Leave</option>
+                            <option value="sick">Sick Leave</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Reason</label>
+                          <textarea
+                            value={leaveFormData.reason}
+                            onChange={(e) => setLeaveFormData(prev => ({ ...prev, reason: e.target.value }))}
+                            rows={2}
+                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter reason for leave..."
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleLeaveCancel}
+                            className="px-4 py-2 bg-gray-300 text-gray-700 text-xs rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleLeaveSubmit}
+                            className="px-4 py-2 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                          >
+                            Submit Request
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Boss Leave History */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                      <h2 className="text-sm font-bold text-gray-800 mb-3">
+                        📋 Leave History
+                      </h2>
+                      {leaveRequests.filter(req => req.status === 'approved').length > 0 ? (
+                        <div className="space-y-2">
+                          {leaveRequests
+                            .filter(req => req.status === 'approved')
+                            .slice(0, 10)
+                            .map((request) => (
+                              <div key={request.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700">
+                                      ✓ Auto-Approved
+                                    </span>
+                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                      request.leaveType === 'annual' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                    }`}>
+                                      {request.leaveType === 'annual' ? '🏖️ Annual' : '🤒 Sick'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] text-gray-500">{request.daysRequested} days</span>
+                                    <button
+                                      onClick={() => {
+                                        if (confirm('Are you sure you want to cancel this leave request?')) {
+                                          const success = LeaveManagementCRUD.cancelLeaveRequest(request.id, getTargetEmployeeId());
+                                          if (success) {
+                                            showToast('Leave request cancelled successfully', 'success');
+                                            loadLeaveRequests();
+                                          } else {
+                                            showToast('Failed to cancel leave request', 'error');
+                                          }
+                                        }
+                                      }}
+                                      className="px-2 py-1 bg-red-500 text-white text-[10px] rounded hover:bg-red-600 transition-colors font-medium"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="text-xs text-gray-700 mb-1">
+                                  <span className="font-medium">{formatDate(request.startDate)}</span>
+                                  {request.startDate !== request.endDate && (
+                                    <> - <span className="font-medium">{formatDate(request.endDate)}</span></>
+                                  )}
+                                  {request.isHalfDay && <span className="text-[10px] text-blue-600 ml-2">(Half Day)</span>}
+                                </div>
+                                <p className="text-xs text-gray-600">{request.reason}</p>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs font-medium">No leave history yet</p>
+                          <p className="text-[10px] mt-1">Submit a request above to get started</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               // Employee Interface - Keep existing functionality
@@ -1375,9 +1523,38 @@ export default function UserDetailPage() {
                     <h2 className="text-sm font-bold text-gray-800 mb-3">
                       📋 {isBoss ? `${USERS.find(u => u.id === selectedEmployeeId)?.firstName}'s Leave Requests` : 'My Leave Requests'}
                     </h2>
-                    {leaveRequests.length > 0 ? (
+
+                    {/* Status Filter Dropdown */}
+                    <div className="mb-4 flex items-center gap-2">
+                      <label className="text-xs font-medium text-gray-700">Filter by Status:</label>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                        className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      >
+                        <option value="all">All Status ({leaveRequests.length})</option>
+                        <option value="pending">⏳ Pending ({leaveRequests.filter(req => req.status === 'pending').length})</option>
+                        <option value="approved">✓ Approved ({leaveRequests.filter(req => req.status === 'approved' || req.status === 'auto_approved').length})</option>
+                        <option value="declined">✗ Declined ({leaveRequests.filter(req => req.status === 'denied').length})</option>
+                      </select>
+                    </div>
+
+                    {leaveRequests.filter(request => {
+                      if (statusFilter === 'all') return true;
+                      if (statusFilter === 'pending') return request.status === 'pending';
+                      if (statusFilter === 'approved') return request.status === 'approved' || request.status === 'auto_approved';
+                      if (statusFilter === 'declined') return request.status === 'denied';
+                      return true;
+                    }).length > 0 ? (
                       <div className="space-y-2">
                         {leaveRequests
+                          .filter(request => {
+                            if (statusFilter === 'all') return true;
+                            if (statusFilter === 'pending') return request.status === 'pending';
+                            if (statusFilter === 'approved') return request.status === 'approved' || request.status === 'auto_approved';
+                            if (statusFilter === 'declined') return request.status === 'denied';
+                            return true;
+                          })
                           .slice(0, 10)
                           .map((request) => (
                             <div key={request.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
@@ -1390,7 +1567,13 @@ export default function UserDetailPage() {
                                       ? 'bg-yellow-100 text-yellow-700'
                                       : 'bg-red-100 text-red-700'
                                   }`}>
-                                    {request.status === 'approved' || request.status === 'auto_approved' ? '✓ Approved' : request.status === 'pending' ? '⏳ Pending' : '✗ Denied'}
+                                    {request.status === 'approved' && (request.userId === 1 || request.userId === 2)
+                                      ? '✓ Auto-Approved'
+                                      : request.status === 'approved' || request.status === 'auto_approved'
+                                      ? '✓ Approved'
+                                      : request.status === 'pending'
+                                      ? '⏳ Pending'
+                                      : '✗ Denied'}
                                   </span>
                                   <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
                                     request.leaveType === 'annual' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
@@ -1425,8 +1608,12 @@ export default function UserDetailPage() {
                     ) : (
                       <div className="text-center py-8 text-gray-500">
                         <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                        <p className="text-xs font-medium">No leave requests yet</p>
-                        <p className="text-[10px] mt-1">Submit a request above to get started</p>
+                        <p className="text-xs font-medium">
+                          {statusFilter === 'all' ? 'No leave requests yet' : `No ${statusFilter} leave requests`}
+                        </p>
+                        <p className="text-[10px] mt-1">
+                          {statusFilter === 'all' ? 'Submit a request above to get started' : 'Try changing the filter or submit a new request'}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -2189,7 +2376,9 @@ export default function UserDetailPage() {
                               const date = new Date(weekStart);
                               date.setDate(weekStart.getDate() + dayOffsets[dayIndex]);
                               const dateStr = date.toISOString().split('T')[0];
-                              const dayEntry = entries.find(e => e.date === dateStr);
+
+                              // Use consistent time entry data for everything
+                              const { entry: dayEntry, breakCount } = getConsistentTimeEntry(employee.id, dateStr, `BOSS VIEW - Employee ${employee.id}`);
 
                               // Determine status
                               let status = 'No Entry';
@@ -2214,13 +2403,6 @@ export default function UserDetailPage() {
                                   statusColor = 'bg-yellow-100 text-yellow-700';
                                   statusIcon = '🟡';
                                 }
-                              }
-
-                              // Count breaks (lunch + short breaks)
-                              let breakCount = 0;
-                              if (dayEntry) {
-                                if (dayEntry.lunchBreakStart) breakCount++;
-                                breakCount += dayEntry.shortBreaks.length;
                               }
 
                               const isToday = dateStr === today.toISOString().split('T')[0];
@@ -2276,7 +2458,20 @@ export default function UserDetailPage() {
                                   </td>
                                   <td className="py-2 px-3">
                                     <span className="font-semibold text-gray-900 text-xs">
-                                      {dayEntry?.totalHours ? formatHours(dayEntry.totalHours) : '-'}
+                                      {(() => {
+                                      if (!dayEntry?.totalHours) return '-';
+
+                                      // Check for invalid data (same clock-in and clock-out time)
+                                      if (dayEntry?.clockIn && dayEntry?.clockOut) {
+                                        const clockIn = new Date(dayEntry.clockIn);
+                                        const clockOut = new Date(dayEntry.clockOut);
+                                        if (Math.abs(clockIn.getTime() - clockOut.getTime()) < 60000) { // Less than 1 minute
+                                          return '0h 00m'; // Invalid entry, show 0 hours
+                                        }
+                                      }
+
+                                      return formatHours(dayEntry.totalHours);
+                                    })()}
                                     </span>
                                   </td>
                                   <td className="py-2 px-3">
@@ -2485,7 +2680,9 @@ export default function UserDetailPage() {
                             const date = new Date(weekStart);
                             date.setDate(weekStart.getDate() + dayOffsets[dayIndex]);
                             const dateStr = date.toISOString().split('T')[0];
-                            const dayEntry = entries.find(e => e.date === dateStr);
+
+                            // Use consistent time entry data for everything
+                            const { entry: dayEntry, breakCount } = getConsistentTimeEntry(userId, dateStr, `LARINA VIEW - User ${userId}`);
 
                             let status = 'No Entry';
                             let statusColor = 'bg-gray-100 text-gray-500';
@@ -2509,12 +2706,6 @@ export default function UserDetailPage() {
                                 statusColor = 'bg-yellow-100 text-yellow-700';
                                 statusIcon = '🟡';
                               }
-                            }
-
-                            let breakCount = 0;
-                            if (dayEntry) {
-                              if (dayEntry.lunchBreakStart) breakCount++;
-                              breakCount += dayEntry.shortBreaks.length;
                             }
 
                             const isToday = dateStr === today.toISOString().split('T')[0];
@@ -2558,7 +2749,20 @@ export default function UserDetailPage() {
                                 </td>
                                 <td className="py-2 px-3">
                                   <span className="font-semibold text-gray-900 text-xs">
-                                    {dayEntry?.totalHours ? formatHours(dayEntry.totalHours) : '-'}
+                                    {(() => {
+                                      if (!dayEntry?.totalHours) return '-';
+
+                                      // Check for invalid data (same clock-in and clock-out time)
+                                      if (dayEntry?.clockIn && dayEntry?.clockOut) {
+                                        const clockIn = new Date(dayEntry.clockIn);
+                                        const clockOut = new Date(dayEntry.clockOut);
+                                        if (Math.abs(clockIn.getTime() - clockOut.getTime()) < 60000) { // Less than 1 minute
+                                          return '0h 00m'; // Invalid entry, show 0 hours
+                                        }
+                                      }
+
+                                      return formatHours(dayEntry.totalHours);
+                                    })()}
                                   </span>
                                 </td>
                                 <td className="py-2 px-3">

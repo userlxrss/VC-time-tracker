@@ -446,6 +446,9 @@ class LeaveManagementCRUD {
       new Date(input.endDate)
     );
 
+    // Check if user is a boss (Ella or Paul)
+    const isBoss = input.userId === 1 || input.userId === 2;
+
     const leaveRequest: LeaveRequest = {
       id: generateId(),
       userId: input.userId,
@@ -455,14 +458,16 @@ class LeaveManagementCRUD {
       isHalfDay: input.isHalfDay,
       daysRequested: input.isHalfDay ? 0.5 : businessDays,
       reason: input.reason,
-      status: "pending",
-      approvedBy: null
+      status: isBoss ? "approved" : "pending",
+      approvedBy: isBoss ? input.userId : null
     };
 
     saveLeaveRequest(leaveRequest);
 
-    // Create notification for managers
-    this.notifyManagersOfNewLeave(leaveRequest);
+    // Create notification for managers (only if not a boss)
+    if (!isBoss) {
+      this.notifyManagersOfNewLeave(leaveRequest);
+    }
 
     return leaveRequest;
   }

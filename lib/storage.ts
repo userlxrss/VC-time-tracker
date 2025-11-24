@@ -26,6 +26,92 @@ export function getTimeEntriesForUser(userId: number): TimeEntry[] {
   return getTimeEntries().filter(entry => entry.userId === userId);
 }
 
+export function calculateBreakCount(dayEntry: TimeEntry | undefined, debugInfo?: string): number {
+  if (!dayEntry) return 0;
+
+  let breakCount = 0;
+
+  // NEW LOGIC: Only count short breaks (lunch breaks are separate, not counted as "breaks")
+  if (dayEntry.shortBreaks && Array.isArray(dayEntry.shortBreaks)) {
+    breakCount += dayEntry.shortBreaks.length;
+  }
+
+  // DEBUG: Log the calculation details
+  if (debugInfo) {
+    console.log(`${debugInfo} - Break Calculation (SHORT BREAKS ONLY):`, {
+      date: dayEntry.date,
+      userId: dayEntry.userId,
+      lunchBreakStart: dayEntry.lunchBreakStart,
+      shortBreaks: dayEntry.shortBreaks,
+      shortBreaksLength: dayEntry.shortBreaks?.length || 0,
+      finalBreakCount: breakCount,
+      note: "Only counting short breaks, not lunch breaks"
+    });
+  }
+
+  return breakCount;
+}
+
+export function getTimeEntryForUserOnDate(userId: number, dateStr: string): TimeEntry | undefined {
+  const entries = getTimeEntriesForUser(userId);
+  return entries.find(entry => entry.date === dateStr);
+}
+
+// Force consistent break calculation for all views
+// Force consistent break calculation and data for all views
+export function getConsistentTimeEntry(userId: number, dateStr: string, source?: string): { entry: TimeEntry | undefined, breakCount: number } {
+  // Always fetch fresh data to avoid caching issues
+  const freshEntries = getTimeEntries().filter(entry => entry.userId === userId);
+  const dayEntry = freshEntries.find(entry => entry.date === dateStr);
+
+  const breakCount = calculateBreakCount(dayEntry);
+
+  // DEBUG: Log consistency check
+  if (source) {
+    console.log(`CONSISTENCY CHECK - ${source}:`, {
+      userId,
+      dateStr,
+      dayEntry: dayEntry ? {
+        date: dayEntry.date,
+        lunchBreakStart: dayEntry.lunchBreakStart,
+        shortBreaks: dayEntry.shortBreaks,
+        shortBreaksLength: dayEntry.shortBreaks?.length || 0
+      } : 'No entry',
+      finalBreakCount: breakCount,
+      totalEntriesFound: freshEntries.length
+    });
+
+    // SPECIAL DEBUG: Pay extra attention to Monday 24/11
+    if (dateStr === '2025-11-24' || dateStr.includes('2025-11-24')) {
+      console.log(`🚨 MONDAY 24/11 DEBUG - ${source}:`);
+      console.log(`  - User ID: ${userId}`);
+      console.log(`  - Date String: ${dateStr}`);
+      console.log(`  - Final Break Count: ${breakCount}`);
+      console.log(`  - Has Entry: ${!!dayEntry}`);
+      if (dayEntry) {
+        console.log(`  - Lunch Break Start: ${dayEntry.lunchBreakStart || 'NONE'}`);
+        console.log(`  - Short Breaks Type: ${typeof dayEntry.shortBreaks}`);
+        console.log(`  - Short Breaks Value:`, dayEntry.shortBreaks);
+        if (Array.isArray(dayEntry.shortBreaks)) {
+          console.log(`  - Short Breaks Count: ${dayEntry.shortBreaks.length}`);
+          console.log(`  - Short Breaks Details:`, dayEntry.shortBreaks);
+          dayEntry.shortBreaks.forEach((breakItem, index) => {
+            console.log(`    ${index + 1}. Start: ${breakItem.startTime || 'N/A'}, End: ${breakItem.endTime || 'N/A'}, Duration: ${breakItem.duration || 'N/A'}`);
+          });
+        }
+      }
+      console.log(`  - TOTAL ENTRIES FOUND: ${freshEntries.length}`);
+    }
+  }
+
+  return { entry: dayEntry, breakCount };
+}
+
+export function getConsistentBreakCount(userId: number, dateStr: string, source?: string): number {
+  const { breakCount } = getConsistentTimeEntry(userId, dateStr, source);
+  return breakCount;
+}
+
 export function getCurrentTimeEntry(userId: number): TimeEntry | null {
   const today = new Date().toISOString().split('T')[0];
   const entries = getTimeEntriesForUser(userId);

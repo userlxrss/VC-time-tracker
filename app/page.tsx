@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [showFilters, setShowFilters] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date());
 
   // Integration hooks for full functionality
   const { clockIn, clockOut, startBreak, endBreak, currentStatus } = useTimeTracking(currentUserId);
@@ -300,6 +301,133 @@ export default function Dashboard() {
   const teamStats = getTeamStats();
   const weeklyData = getWeeklyData();
 
+  // Calendar helpers and data
+  // Australian Public Holidays (National + NSW/Sydney)
+  const australianHolidays = [
+    // 2024 Holidays
+    { date: '2024-01-01', name: 'New Year\'s Day' },
+    { date: '2024-01-26', name: 'Australia Day' },
+    { date: '2024-03-29', name: 'Good Friday' },
+    { date: '2024-03-30', name: 'Easter Saturday' },
+    { date: '2024-04-01', name: 'Easter Monday' },
+    { date: '2024-04-25', name: 'Anzac Day' },
+    { date: '2024-06-10', name: 'Queen\'s Birthday' },
+    { date: '2024-08-05', name: 'Bank Holiday (NSW)' },
+    { date: '2024-12-25', name: 'Christmas Day' },
+    { date: '2024-12-26', name: 'Boxing Day' },
+
+    // 2025 Holidays
+    { date: '2025-01-01', name: 'New Year\'s Day' },
+    { date: '2025-01-27', name: 'Australia Day (Observed)' }, // Jan 26 is Sunday
+    { date: '2025-04-18', name: 'Good Friday' },
+    { date: '2025-04-19', name: 'Easter Saturday' },
+    { date: '2025-04-21', name: 'Easter Monday' },
+    { date: '2025-04-25', name: 'Anzac Day' },
+    { date: '2025-06-09', name: 'Queen\'s Birthday' },
+    { date: '2025-08-04', name: 'Bank Holiday (NSW)' },
+    { date: '2025-12-25', name: 'Christmas Day' },
+    { date: '2025-12-26', name: 'Boxing Day' },
+
+    // 2026 Holidays
+    { date: '2026-01-01', name: 'New Year\'s Day' },
+    { date: '2026-01-26', name: 'Australia Day' },
+    { date: '2026-04-03', name: 'Good Friday' },
+    { date: '2026-04-04', name: 'Easter Saturday' },
+    { date: '2026-04-06', name: 'Easter Monday' },
+    { date: '2026-04-27', name: 'Anzac Day (Observed)' }, // Apr 25 is Saturday
+    { date: '2026-06-08', name: 'Queen\'s Birthday' },
+    { date: '2026-08-03', name: 'Bank Holiday (NSW)' },
+    { date: '2026-12-25', name: 'Christmas Day' },
+    { date: '2026-12-28', name: 'Boxing Day (Observed)' }, // Dec 26 is Saturday
+  ];
+
+  const getCalendarDays = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+
+    const days = [];
+
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDayOfWeek; i++) {
+      days.push(null);
+    }
+
+    // Add all days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day));
+    }
+
+    return days;
+  };
+
+  const formatDateKey = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getHolidayForDate = (date: Date) => {
+    const dateKey = formatDateKey(date);
+    return australianHolidays.find(h => h.date === dateKey);
+  };
+
+  const getLeaveForDate = (date: Date) => {
+    const dateKey = formatDateKey(date);
+    const allLeave = USERS.flatMap(user => {
+      const userLeave = getLeaveRequestsForUser(user.id);
+      return userLeave
+        .filter(leave => leave.status === 'approved')
+        .filter(leave => {
+          const leaveStart = new Date(leave.startDate);
+          const leaveEnd = new Date(leave.endDate);
+          const checkDate = new Date(date);
+          return checkDate >= leaveStart && checkDate <= leaveEnd;
+        })
+        .map(leave => ({ ...leave, userName: user.firstName }));
+    });
+    return allLeave;
+  };
+
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  const previousMonth = () => {
+    setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentCalendarMonth(new Date(currentCalendarMonth.getFullYear(), currentCalendarMonth.getMonth() + 1, 1));
+  };
+
+  const monthName = currentCalendarMonth.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+
+  // Upcoming NSW Public Holidays (December 2025 onwards)
+  const upcomingHolidays = [
+    { date: '2025-12-25', displayDate: '25 December 2025', name: 'Christmas Day' },
+    { date: '2025-12-26', displayDate: '26 December 2025', name: 'Boxing Day' },
+    { date: '2026-01-01', displayDate: '1 January 2026', name: "New Year's Day" },
+    { date: '2026-01-26', displayDate: '26 January 2026', name: 'Australia Day' },
+    { date: '2026-04-03', displayDate: '3 April 2026', name: 'Good Friday' },
+    { date: '2026-04-04', displayDate: '4 April 2026', name: 'Easter Saturday' },
+    { date: '2026-04-05', displayDate: '5 April 2026', name: 'Easter Sunday' },
+    { date: '2026-04-06', displayDate: '6 April 2026', name: 'Easter Monday' },
+    { date: '2026-04-25', displayDate: '25 April 2026', name: 'Anzac Day' },
+    { date: '2026-06-08', displayDate: '8 June 2026', name: "King's Birthday" },
+    { date: '2026-10-05', displayDate: '5 October 2026', name: 'Labour Day' },
+    { date: '2026-12-25', displayDate: '25 December 2026', name: 'Christmas Day' },
+    { date: '2026-12-26', displayDate: '26 December 2026', name: 'Boxing Day' },
+    { date: '2026-12-28', displayDate: '28 December 2026', name: 'Boxing Day (Observed)' }
+  ];
+
   // Current user status for quick actions
   const currentUserStatus = getStatusDisplay(currentUserId);
   const isCurrentUserClockedIn = currentUserStatus.text === 'Clocked In';
@@ -393,53 +521,7 @@ export default function Dashboard() {
       </header>
 
       <main className="p-6">
-        <div className="stats-grid mb-8">
-          <div className="stat-card">
-            <div className="stat-icon">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div className="stat-label">Total Team Hours</div>
-            <div className="stat-value">{teamStats.totalHours}</div>
-            <div className="stat-change">
-              <TrendingUp className="w-3 h-3" />
-              <span>vs Last Week: --</span>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#ECFDF5', color: '#22C55E' }}>
-              <UserCheck className="w-5 h-5" />
-            </div>
-            <div className="stat-label">Clocked In</div>
-            <div className="stat-value">{teamStats.clockedIn}</div>
-            <div className="stat-change">
-              <span>{parseInt(teamStats.clockedIn.split('/')[0]) * 33}% active</span>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#FEF3C7', color: '#F59E0B' }}>
-              <Coffee className="w-5 h-5" />
-            </div>
-            <div className="stat-label">On Break</div>
-            <div className="stat-value">{teamStats.onBreak}</div>
-            <div className="stat-change">
-              <span>{parseInt(teamStats.onBreak.split('/')[0]) * 33}% on break</span>
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#F3E8FF', color: '#A855F7' }}>
-              <BarChart3 className="w-5 h-5" />
-            </div>
-            <div className="stat-label">Avg Hours/Day</div>
-            <div className="stat-value">{teamStats.avgHours}</div>
-            <div className="stat-change">
-              <span>Target: 8h/day</span>
-            </div>
-          </div>
-        </div>
-
+        
         <div className="dashboard-layout">
           <div className="main-content">
             <div className="team-table">
@@ -566,18 +648,31 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="row-status">
-                      <div
-                        className="row-status-dot"
-                        style={{ backgroundColor: status.dotColor }}
-                      />
-                      <span style={{ color: status.color }}>
-                        {status.text}
-                      </span>
-                    </div>
-                    <div className="row-hours">{formatHours(userStats.todayHours)}</div>
-                    <div className="row-hours">{formatHours(userStats.weekHours)}</div>
-                    <div className="row-hours">{formatHours(userStats.monthHours)}</div>
+                    {/* Only show time tracking for employees, not bosses */}
+                    {user.id !== 1 && user.id !== 2 ? (
+                      <>
+                        <div className="row-status">
+                          <div
+                            className="row-status-dot"
+                            style={{ backgroundColor: status.dotColor }}
+                          />
+                          <span style={{ color: status.color }}>
+                            {status.text}
+                          </span>
+                        </div>
+                        <div className="row-hours">{formatHours(userStats.todayHours)}</div>
+                        <div className="row-hours">{formatHours(userStats.weekHours)}</div>
+                        <div className="row-hours">{formatHours(userStats.monthHours)}</div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Empty placeholders for bosses to maintain grid alignment */}
+                        <div className="row-status"></div>
+                        <div className="row-hours"></div>
+                        <div className="row-hours"></div>
+                        <div className="row-hours"></div>
+                      </>
+                    )}
                     <div className="row-arrow">
                       <ChevronRight className="w-5 h-5" />
                     </div>
@@ -608,36 +703,86 @@ export default function Dashboard() {
                 <button className="page-btn" disabled>Next →</button>
               </div>
             </div>
+
+            {/* Team Calendar Section */}
+            <div className="calendar-section">
+            <div className="calendar-card">
+              <div className="calendar-header">
+                <h2 className="calendar-title">
+                  <Calendar className="w-5 h-5" />
+                  Team Calendar
+                </h2>
+                <div className="calendar-nav">
+                  <button onClick={previousMonth} className="calendar-nav-btn">←</button>
+                  <span className="calendar-month">{monthName}</span>
+                  <button onClick={nextMonth} className="calendar-nav-btn">→</button>
+                </div>
+              </div>
+
+              {/* Calendar Legend */}
+              <div className="calendar-legend">
+                <div className="legend-item">
+                  <span className="legend-dot holiday"></span>
+                  <span className="legend-text">Australian Public Holiday</span>
+                </div>
+                <div className="legend-item">
+                  <span className="legend-dot leave"></span>
+                  <span className="legend-text">Team Member Leave</span>
+                </div>
+                <div className="legend-item">
+                  <span className="legend-dot today"></span>
+                  <span className="legend-text">Today</span>
+                </div>
+              </div>
+
+              {/* Calendar Content: Grid + Holiday List Side by Side */}
+              <div className="calendar-content">
+                {/* Left: Calendar Grid */}
+                <div className="calendar-grid-wrapper">
+                  <div className="calendar-grid">
+                {/* Day headers */}
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="calendar-day-header">{day}</div>
+                ))}
+
+                {/* Calendar days */}
+                {getCalendarDays(currentCalendarMonth).map((date, index) => {
+                  if (!date) {
+                    return <div key={`empty-${index}`} className="calendar-day empty"></div>;
+                  }
+
+                  const holiday = getHolidayForDate(date);
+                  const leave = getLeaveForDate(date);
+                  const today = isToday(date);
+                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+                  return (
+                    <div
+                      key={index}
+                      className={`calendar-day ${today ? 'today' : ''} ${holiday ? 'has-holiday' : ''} ${leave.length > 0 ? 'has-leave' : ''} ${isWeekend ? 'weekend' : ''}`}
+                    >
+                      <div className="day-number">{date.getDate()}</div>
+                      {holiday && (
+                        <div className="day-event holiday">
+                          🎉 {holiday.name}
+                        </div>
+                      )}
+                      {leave.map((l: any, idx: number) => (
+                        <div key={idx} className="day-event leave">
+                          🏖️ {l.userName}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
           </div>
 
           <div className="sidebar">
-            {/* Weekly Trends Panel */}
-            <div className="panel">
-              <div className="panel-header">
-                <div className="panel-title">
-                  <BarChart3 className="w-5 h-5" />
-                  This Week Trends
-                </div>
-                <select className="date-selector" defaultValue="This Week">
-                  <option value="Today">Today</option>
-                  <option value="This Week">This Week</option>
-                  <option value="This Month">This Month</option>
-                </select>
-              </div>
-
-              <div className="chart-container">
-                {weeklyData.map((data, index) => (
-                  <div
-                    key={index}
-                    className="chart-bar"
-                    style={{ height: `${data.height}px` }}
-                    data-hours={`${data.hours}h`}
-                  >
-                    <div className="bar-label">{data.day}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Alerts Panel */}
             <div className="panel">
@@ -691,6 +836,29 @@ export default function Dashboard() {
               </div>
 
               <a href="#" className="view-all-link">View All →</a>
+            </div>
+
+            {/* Holidays Panel */}
+            <div className="panel">
+              <div className="panel-header">
+                <div className="panel-title">
+                  <Calendar className="w-5 h-5" />
+                  Upcoming Holidays
+                </div>
+              </div>
+
+              <div className="holidays-sidebar-list">
+                {upcomingHolidays.map((holiday, index) => (
+                  <div key={index} className="holiday-sidebar-item">
+                    <div className="holiday-sidebar-date">
+                      {holiday.displayDate}
+                    </div>
+                    <div className="holiday-sidebar-name">
+                      {holiday.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -1254,6 +1422,231 @@ export default function Dashboard() {
           .row-hours:nth-child(6) { display: none; }
         }
 
+        /* Calendar Section */
+        .calendar-section {
+          margin-bottom: 32px;
+        }
+
+        .calendar-card {
+          background: white;
+          border-radius: 12px;
+          padding: 24px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+
+        .calendar-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 20px;
+          font-weight: 600;
+          color: #1f2937;
+        }
+
+        .calendar-nav {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .calendar-nav-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          border: 1px solid #e5e7eb;
+          background: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-size: 18px;
+        }
+
+        .calendar-nav-btn:hover {
+          background: #f9fafb;
+          border-color: #d1d5db;
+        }
+
+        .calendar-month {
+          font-size: 16px;
+          font-weight: 600;
+          color: #1f2937;
+          min-width: 180px;
+          text-align: center;
+        }
+
+        .calendar-grid-wrapper {
+          min-width: 0;
+        }
+
+        /* Holidays Sidebar Styles */}
+        .holidays-sidebar-list {
+          max-height: 500px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .holiday-sidebar-item {
+          padding: 12px;
+          background: #f9fafb;
+          border-radius: 6px;
+          border-left: 3px solid #ef4444;
+          transition: all 0.2s;
+        }
+
+        .holiday-sidebar-item:hover {
+          background: #f3f4f6;
+        }
+
+        .holiday-sidebar-date {
+          font-size: 13px;
+          font-weight: 600;
+          color: #dc2626;
+          margin-bottom: 4px;
+        }
+
+        .holiday-sidebar-name {
+          font-size: 13px;
+          color: #6b7280;
+          margin-left: 20px;
+        }
+
+        .calendar-legend {
+          display: flex;
+          gap: 24px;
+          margin-bottom: 20px;
+          padding: 12px;
+          background: #f9fafb;
+          border-radius: 8px;
+        }
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .legend-dot {
+          width: 16px;
+          height: 16px;
+          border-radius: 4px;
+        }
+
+        .legend-dot.holiday {
+          background: #fef2f2;
+          border: 2px solid #ef4444;
+        }
+
+        .legend-dot.leave {
+          background: #faf5ff;
+          border: 2px solid #a855f7;
+        }
+
+        .legend-dot.today {
+          background: white;
+          border: 2px solid #3b82f6;
+        }
+
+        .legend-text {
+          font-size: 13px;
+          color: #6b7280;
+        }
+
+        .calendar-grid {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 8px;
+        }
+
+        .calendar-day-header {
+          text-align: center;
+          font-size: 12px;
+          font-weight: 600;
+          color: #6b7280;
+          padding: 8px 0;
+          text-transform: uppercase;
+        }
+
+        .calendar-day-header:first-child,
+        .calendar-day-header:last-child {
+          color: #9ca3af;
+          background: #fafafa;
+          border-radius: 4px;
+        }
+
+        .calendar-day {
+          min-height: 100px;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          padding: 8px;
+          background: white;
+          position: relative;
+          transition: all 0.2s;
+        }
+
+        .calendar-day.empty {
+          background: #f9fafb;
+          border-color: #f3f4f6;
+        }
+
+        .calendar-day.weekend {
+          background: #fafafa;
+        }
+
+        .calendar-day:not(.empty):hover {
+          border-color: #d1d5db;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .calendar-day.today {
+          border: 3px solid #3b82f6;
+          background: #dbeafe;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .calendar-day.today .day-number {
+          color: #1e40af;
+          font-weight: 700;
+        }
+
+        .day-number {
+          font-size: 14px;
+          font-weight: 500;
+          color: #1f2937;
+          margin-bottom: 4px;
+        }
+
+        .day-event {
+          font-size: 11px;
+          padding: 4px 6px;
+          border-radius: 4px;
+          margin-top: 4px;
+          line-height: 1.3;
+          word-wrap: break-word;
+        }
+
+        .day-event.holiday {
+          background: #fef2f2;
+          color: #dc2626;
+          border: 1px solid #fecaca;
+        }
+
+        .day-event.leave {
+          background: #faf5ff;
+          color: #9333ea;
+          border: 1px solid #e9d5ff;
+        }
+
         @media (max-width: 767px) {
           .stats-grid { grid-template-columns: 1fr; }
           .table-row {
@@ -1262,6 +1655,17 @@ export default function Dashboard() {
           }
           .search-input { width: 100%; }
           .table-actions { flex-direction: column; gap: 8px; }
+          .calendar-grid {
+            gap: 4px;
+          }
+          .calendar-day {
+            min-height: 80px;
+            padding: 6px;
+          }
+          .calendar-legend {
+            flex-direction: column;
+            gap: 12px;
+          }
         }
       `}</style>
     </div>
