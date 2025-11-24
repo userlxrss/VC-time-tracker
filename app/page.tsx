@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Moon, Sun, Search, Filter, Download, ChevronRight, Users, Clock, Coffee, TrendingUp, CheckCircle, AlertCircle, Calendar, BarChart3, UserCheck, Settings, LogOut, Bell } from 'lucide-react';
 import { USERS, CURRENT_USER_ID } from '@/lib/constants';
+import type { User } from '@/lib/types';
+import { getUserProfile, saveUserProfile, updateUserPassword } from '@/lib/storage';
 import {
   getCurrentUserId,
   setCurrentUserId,
@@ -16,9 +18,7 @@ import {
   getSalaryPaymentsForUser,
   getPendingLeaveRequests,
   getPendingSalaries,
-  autoGenerateMonthlySalaries,
-  sendSalaryReminders
-} from '@/lib/storage';
+  } from '@/lib/storage';
 import {
   handleClockIn,
   handleClockOut,
@@ -29,20 +29,99 @@ import {
   dataSyncManager
 } from '@/lib/data-integration';
 import { useTimeTracking, useLeaveManagement, useSalaryManagement } from '@/lib/react-integration';
-import { seedSampleData } from '@/lib/seed-data';
+import { clearProductionData } from '@/lib/storage';
 
 export default function Dashboard() {
   const router = useRouter();
   const [currentUserId, setCurrentUserIdState] = useState(CURRENT_USER_ID);
-  const [currentUser, setCurrentUser] = useState(USERS.find(u => u.id === currentUserId)!);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const baseUser = USERS.find(u => u.id === currentUserId)!;
+    const userProfile = getUserProfile(currentUserId);
+    return userProfile || baseUser;
+  });
   const [theme, setThemeState] = useState<'light' | 'dark'>('light');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+
+  // Settings form state
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [name, setName] = useState(currentUser.firstName);
+  const [email, setEmail] = useState(currentUser.email);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [dateRange, setDateRange] = useState('Today');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Settings helper functions
+  const resetSettingsForm = () => {
+    setName(currentUser.firstName);
+    setEmail(currentUser.email);
+    setProfilePhoto(currentUser.profilePhoto || null);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setProfilePhoto(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const saveSettings = () => {
+    // Validate email
+    if (!validateEmail(email)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+
+    // Validate password if changing
+    if (newPassword) {
+      if (newPassword.length < 6) {
+        showToast('Password must be at least 6 characters', 'error');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showToast('New passwords do not match', 'error');
+        return;
+      }
+    }
+
+    // Save profile data
+    const updates: Partial<User> = {
+      firstName: name,
+      email: email,
+      ...(profilePhoto && { profilePhoto })
+    };
+
+    saveUserProfile(currentUserId, updates);
+
+    // Update current user state
+    const updatedUser = { ...currentUser, ...updates };
+    setCurrentUser(updatedUser);
+
+    // Update password if provided
+    if (newPassword) {
+      updateUserPassword(currentUserId, newPassword);
+    }
+
+    setIsSettingsModalOpen(false);
+    showToast('Settings saved successfully', 'success');
+  };
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date());
@@ -54,6 +133,9 @@ export default function Dashboard() {
   
   // Initialize theme and user data
   useEffect(() => {
+    // Clear production data on load
+    clearProductionData();
+
     const savedTheme = getTheme();
     setThemeState(savedTheme);
     setTheme(savedTheme);
@@ -67,10 +149,7 @@ export default function Dashboard() {
     // All users can access the main dashboard
     const isBoss = savedUserId === 1 || savedUserId === 2;
 
-    // Initialize salary system
-    autoGenerateMonthlySalaries();
-    sendSalaryReminders();
-
+    
     // Set up real-time data sync
     const syncListener = (event: any) => {
       // Update UI based on data changes
@@ -92,6 +171,20 @@ export default function Dashboard() {
 
     return () => dataSyncManager.removeListener(syncListener);
   }, []);
+
+  // Update form when current user changes
+  useEffect(() => {
+    setName(currentUser.firstName);
+    setEmail(currentUser.email);
+    setProfilePhoto(currentUser.profilePhoto || null);
+  }, [currentUser]);
+
+  // Reset form when settings modal opens
+  useEffect(() => {
+    if (isSettingsModalOpen) {
+      resetSettingsForm();
+    }
+  }, [isSettingsModalOpen]);
 
   // Update time every minute
   useEffect(() => {
@@ -150,9 +243,11 @@ export default function Dashboard() {
   const switchUser = (userId: number) => {
     setCurrentUserIdState(userId);
     setCurrentUserId(userId);
-    setCurrentUser(USERS.find(u => u.id === userId)!);
+    const baseUser = USERS.find(u => u.id === userId)!;
+    const userProfile = getUserProfile(userId);
+    setCurrentUser(userProfile || baseUser);
     setIsUserDropdownOpen(false);
-    showToast(`Switched to ${USERS.find(u => u.id === userId)?.firstName}`);
+    showToast(`Switched to ${baseUser.firstName}`);
 
     // Redirect employees to their individual dashboard
     const isBoss = userId === 1 || userId === 2;
@@ -162,11 +257,7 @@ export default function Dashboard() {
   };
 
   
-  const seedData = () => {
-    seedSampleData();
-    showToast('Sample data seeded for Larina!', 'success');
-  };
-
+  
   const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
     try {
       const data = selectedUsers.length > 0
@@ -596,13 +687,6 @@ export default function Dashboard() {
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         >
                           Export as PDF
-                        </button>
-                        <hr className="my-2" />
-                        <button
-                          onClick={seedData}
-                          className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
-                        >
-                          🎯 Seed Sample Data for Larina
                         </button>
                       </div>
                     )}
@@ -1695,98 +1779,136 @@ export default function Dashboard() {
 
         {/* Settings Modal */}
         {isSettingsModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-md overflow-y-auto max-h-[90vh]">
+              {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <h2 className="text-xl font-semibold text-gray-900">Settings</h2>
                 <button
                   onClick={() => setIsSettingsModalOpen(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
+              {/* Content */}
               <div className="p-6 space-y-6">
-                {/* Theme Setting */}
+                {/* Profile Section */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-3">
-                    Appearance
-                  </label>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center">
-                      <Sun className="w-5 h-5 text-gray-600 mr-3" />
-                      <span className="text-sm text-gray-700">Theme</span>
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">Profile</h3>
+
+                  {/* Profile Photo */}
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="relative">
+                      {profilePhoto ? (
+                        <img
+                          src={profilePhoto}
+                          alt="Profile"
+                          className="w-16 h-16 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-lg font-medium ${
+                          currentUserId === 1 || currentUserId === 2 ? 'bg-blue-600' : 'bg-green-600'
+                        }`}>
+                          {name[0]?.toUpperCase() || '?'}
+                        </div>
+                      )}
                     </div>
-                    <button
-                      onClick={toggleTheme}
-                      className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
-                        }`}
+                    <div>
+                      <label className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        Change Photo
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                        />
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">JPG, PNG up to 5MB</p>
+                    </div>
+                  </div>
+
+                  {/* Form Fields */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter your name"
                       />
-                    </button>
-                  </div>
-                </div>
-
-                {/* User Account Setting */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-3">
-                    Account
-                  </label>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium mr-3 ${
-                        currentUserId === 1 || currentUserId === 2 ? 'bg-blue-600' : 'bg-green-600'
-                      }`}>
-                        {currentUser.firstName[0]}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{currentUser.firstName}</p>
-                        <p className="text-xs text-gray-500">{currentUser.email}</p>
-                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter your email"
+                      />
                     </div>
                   </div>
                 </div>
 
-                {/* Notifications Setting */}
+                {/* Security Section */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-3">
-                    Notifications
-                  </label>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center">
-                      <Bell className="w-5 h-5 text-gray-600 mr-3" />
-                      <span className="text-sm text-gray-700">Push Notifications</span>
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">Security</h3>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter current password"
+                      />
                     </div>
-                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                      <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
-                    </button>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter new password (optional)"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Confirm new password"
+                      />
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Actions */}
-                <div className="pt-4 border-t border-gray-200 space-y-3">
-                  <button
-                    onClick={() => {
-                      setIsSettingsModalOpen(false);
-                      showToast('Settings saved successfully', 'success');
-                    }}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    onClick={() => setIsSettingsModalOpen(false)}
-                    className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
+              {/* Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-3">
+                <button
+                  onClick={() => setIsSettingsModalOpen(false)}
+                  className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveSettings}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                >
+                  Save Changes
+                </button>
               </div>
             </div>
           </div>

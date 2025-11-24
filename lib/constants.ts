@@ -1,9 +1,9 @@
 import { User } from "./types";
 
 export const USERS: User[] = [
-  { id: 1, firstName: "Ella", email: "ella@vc.com" },
-  { id: 2, firstName: "Paul", email: "paul@vc.com" },
-  { id: 3, firstName: "Larina", email: "larina@vc.com" }
+  { id: 1, firstName: "Ella", email: "ella@vc.com", password: "ella123" },
+  { id: 2, firstName: "Paul", email: "paul@vc.com", password: "paul123" },
+  { id: 3, firstName: "Larina", email: "larina@vc.com", password: "larina123" }
 ];
 
 export const CURRENT_USER_ID = 1; // Default: Ella (Boss)
@@ -14,7 +14,8 @@ export const STORAGE_KEYS = {
   SALARY_PAYMENTS: "vc_salary_payments",
   NOTIFICATIONS: "vc_notifications",
   THEME: "vc_theme",
-  CURRENT_USER: "vc_current_user"
+  CURRENT_USER: "vc_current_user",
+  USER_PROFILES: "vc_user_profiles"
 };
 
 export const MONTHLY_SALARY = 32444; // ₱32,444

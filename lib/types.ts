@@ -2,6 +2,8 @@ export interface User {
   id: number;
   firstName: string;
   email: string;
+  profilePhoto?: string; // Base64 encoded image
+  password: string; // Simple hash for demo purposes
 }
 
 export interface TimeEntry {

@@ -18,8 +18,7 @@ import {
   getSalaryRecordsForEmployee,
   getCurrentMonthSalary,
   getPendingLeaveRequests,
-  autoGenerateMonthlySalaries,
-  autoCloseStaleEntries,
+    autoCloseStaleEntries,
   markSalaryAsPaid,
   updateLeaveRequest,
   formatCurrency,
@@ -129,8 +128,7 @@ export default function UserDetailPage() {
     autoCloseStaleEntries();
 
     if (currentUserIsBoss) {
-      autoGenerateMonthlySalaries();
-    }
+          }
 
     loadSalaryData();
     loadLeaveRequests();
@@ -264,8 +262,7 @@ export default function UserDetailPage() {
       // Clear old salary data
       localStorage.removeItem('salary_records');
       // Force regeneration
-      autoGenerateMonthlySalaries();
-      // Reload data
+            // Reload data
       loadSalaryData();
       showToast('Salary history regenerated successfully!', 'success');
     }
