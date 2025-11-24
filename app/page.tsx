@@ -36,6 +36,8 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState(USERS.find(u => u.id === currentUserId)!);
   const [theme, setThemeState] = useState<'light' | 'dark'>('light');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -109,6 +111,26 @@ export default function Dashboard() {
     setUnreadNotifications(notifications.length);
   }, [currentUserId, notifications]);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+
+      // Close notification dropdown if click is outside
+      if (isNotificationDropdownOpen && !target.closest('[data-notification-dropdown]')) {
+        setIsNotificationDropdownOpen(false);
+      }
+
+      // Close user dropdown if click is outside
+      if (isUserDropdownOpen && !target.closest('[data-user-dropdown]')) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isNotificationDropdownOpen, isUserDropdownOpen]);
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -132,6 +154,14 @@ export default function Dashboard() {
     if (!isBoss) {
       router.push(`/user/${userId}`);
     }
+  };
+
+  const markAllNotificationsAsRead = () => {
+    // This would typically update the notification status in storage
+    // For now, we'll just show a toast and close the dropdown
+    setUnreadNotifications(0);
+    setIsNotificationDropdownOpen(false);
+    showToast('All notifications marked as read', 'success');
   };
 
   const seedData = () => {
@@ -465,25 +495,75 @@ export default function Dashboard() {
 
             {/* Right: Navigation */}
             <div className="flex items-center gap-4">
-              <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+              <button
+                onClick={() => showToast('Reports feature coming soon!', 'success')}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+              >
                 <BarChart3 className="w-4 h-4" />
                 Reports
               </button>
 
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+              <button
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+              >
                 <Settings className="w-5 h-5" />
               </button>
 
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors relative">
-                <Bell className="w-5 h-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-                    {unreadNotifications}
-                  </span>
-                )}
-              </button>
+              <div className="relative" data-notification-dropdown>
+                <button
+                  onClick={() => setIsNotificationDropdownOpen(!isNotificationDropdownOpen)}
+                  className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors relative"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </button>
 
-              <div className="relative">
+                {isNotificationDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-200">
+                      <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
+                      {unreadNotifications > 0 && (
+                        <p className="text-xs text-gray-500">{unreadNotifications} unread</p>
+                      )}
+                    </div>
+
+                    <div className="max-h-64 overflow-y-auto">
+                      {unreadNotifications > 0 ? (
+                        <div className="p-4 text-center">
+                          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
+                            <Bell className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <p className="text-sm text-gray-900 mb-1">You have notifications</p>
+                          <p className="text-xs text-gray-500">Click to view all notifications</p>
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center">
+                          <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-2">
+                            <Bell className="w-6 h-6 text-gray-400" />
+                          </div>
+                          <p className="text-sm text-gray-500">No new notifications</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="px-4 py-2 border-t border-gray-200">
+                      <button
+                        onClick={markAllNotificationsAsRead}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Mark all as read
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative" data-user-dropdown>
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium hover:opacity-90 transition-opacity ${
@@ -1668,6 +1748,105 @@ export default function Dashboard() {
           }
         }
       `}</style>
+
+        {/* Settings Modal */}
+        {isSettingsModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">Settings</h2>
+                <button
+                  onClick={() => setIsSettingsModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Theme Setting */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-3">
+                    Appearance
+                  </label>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <Sun className="w-5 h-5 text-gray-600 mr-3" />
+                      <span className="text-sm text-gray-700">Theme</span>
+                    </div>
+                    <button
+                      onClick={toggleTheme}
+                      className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* User Account Setting */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-3">
+                    Account
+                  </label>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium mr-3 ${
+                        currentUserId === 1 || currentUserId === 2 ? 'bg-blue-600' : 'bg-green-600'
+                      }`}>
+                        {currentUser.firstName[0]}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{currentUser.firstName}</p>
+                        <p className="text-xs text-gray-500">{currentUser.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notifications Setting */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 mb-3">
+                    Notifications
+                  </label>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <Bell className="w-5 h-5 text-gray-600 mr-3" />
+                      <span className="text-sm text-gray-700">Push Notifications</span>
+                    </div>
+                    <button className="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                      <span className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="pt-4 border-t border-gray-200 space-y-3">
+                  <button
+                    onClick={() => {
+                      setIsSettingsModalOpen(false);
+                      showToast('Settings saved successfully', 'success');
+                    }}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={() => setIsSettingsModalOpen(false)}
+                    className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
