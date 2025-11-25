@@ -140,14 +140,36 @@ export default function Dashboard() {
     setThemeState(savedTheme);
     setTheme(savedTheme);
 
-    const savedUserId = getCurrentUserId();
-    if (savedUserId !== CURRENT_USER_ID) {
-      setCurrentUserIdState(savedUserId);
-      setCurrentUser(USERS.find(u => u.id === savedUserId)!);
+    // Check for logged in user from localStorage
+    const loggedInUserStr = localStorage.getItem('loggedInUser');
+    if (loggedInUserStr) {
+      let loggedInUser = null;
+      try {
+        loggedInUser = JSON.parse(loggedInUserStr);
+        // Convert to User format for compatibility
+        const userForApp = {
+          id: loggedInUser.id,
+          firstName: loggedInUser.first_name,
+          email: loggedInUser.email || `${loggedInUser.first_name.toLowerCase()}@example.com`,
+          role: loggedInUser.role,
+          profilePhoto: null,
+          password: ''
+        };
+        setCurrentUserIdState(loggedInUser.id);
+        setCurrentUser(userForApp);
+      } catch (error) {
+        console.error('Error parsing logged in user:', error);
+      }
+    } else {
+      // Fallback to current user logic
+      const savedUserId = getCurrentUserId();
+      if (savedUserId !== CURRENT_USER_ID) {
+        setCurrentUserIdState(savedUserId);
+        setCurrentUser(USERS.find(u => u.id === savedUserId)!);
+      }
     }
 
     // All users can access the main dashboard
-    const isBoss = savedUserId === 1 || savedUserId === 2;
 
     
     // Set up real-time data sync
@@ -598,6 +620,17 @@ export default function Dashboard() {
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 <Settings className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => {
+                  localStorage.removeItem('loggedInUser');
+                  window.location.href = '/auth/signup';
+                }}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
               </button>
 
               
