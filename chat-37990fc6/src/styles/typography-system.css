@@ -1,0 +1,448 @@
+/*
+===========================================
+TYPOGRAPHY SCALING SYSTEM
+===========================================
+Fluid typography that scales perfectly across all breakpoints
+Uses clamp() for smooth scaling between minimum and maximum values
+*/
+
+/* ========================================
+FLUID TYPOGRAPHY BASE
+======================================== */
+:root {
+  /* Base font sizes for each breakpoint */
+  --mobile-font-base: 16px;
+  --tablet-font-base: 17px;
+  --desktop-font-base: 18px;
+
+  /* Line heights optimized for readability */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+
+  /* Letter spacing for readability */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+
+  /* Fluid font sizes using clamp() */
+  --text-fluid-xs: clamp(0.75rem, 2vw, 0.875rem);     /* 12px - 14px */
+  --text-fluid-sm: clamp(0.875rem, 2.5vw, 1rem);       /* 14px - 16px */
+  --text-fluid-base: clamp(1rem, 3vw, 1.125rem);       /* 16px - 18px */
+  --text-fluid-lg: clamp(1.125rem, 3.5vw, 1.25rem);    /* 18px - 20px */
+  --text-fluid-xl: clamp(1.25rem, 4vw, 1.5rem);        /* 20px - 24px */
+  --text-fluid-2xl: clamp(1.5rem, 5vw, 2rem);          /* 24px - 32px */
+  --text-fluid-3xl: clamp(1.875rem, 6vw, 2.5rem);      /* 30px - 40px */
+  --text-fluid-4xl: clamp(2.25rem, 7vw, 3rem);         /* 36px - 48px */
+  --text-fluid-5xl: clamp(3rem, 8vw, 4rem);            /* 48px - 64px */
+
+  /* Display headings */
+  --display-sm: clamp(1.5rem, 5vw, 2.25rem);           /* 24px - 36px */
+  --display-md: clamp(2rem, 6vw, 3rem);                /* 32px - 48px */
+  --display-lg: clamp(2.5rem, 7vw, 3.75rem);           /* 40px - 60px */
+  --display-xl: clamp(3rem, 8vw, 4.5rem);              /* 48px - 72px */
+
+  /* Component-specific sizes */
+  --heading-size: var(--text-fluid-2xl);
+  --card-title-size: var(--text-fluid-xl);
+  --button-text-size: var(--text-fluid-base);
+  --label-size: var(--text-fluid-sm);
+  --input-size: var(--text-fluid-base);
+  --caption-size: var(--text-fluid-xs);
+  --modal-title-size: var(--text-fluid-xl);
+  --section-title-size: var(--text-fluid-2xl);
+}
+
+/* ========================================
+BASE TYPOGRAPHY
+======================================== */
+html {
+  font-size: var(--mobile-font-base);
+  line-height: var(--line-height-normal);
+  letter-spacing: var(--letter-spacing-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: var(--tablet-font-base);
+  }
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: var(--desktop-font-base);
+  }
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  font-size: var(--text-fluid-base);
+  line-height: var(--line-height-relaxed);
+  color: #1f2937;
+  background-color: #f9fafb;
+}
+
+/* ========================================
+HEADINGS
+======================================== */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  margin-bottom: 0.5em;
+  color: #111827;
+}
+
+h1 {
+  font-size: var(--display-sm);
+  font-weight: 800;
+}
+
+@media (min-width: 768px) {
+  h1 {
+    font-size: var(--display-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  h1 {
+    font-size: var(--display-lg);
+  }
+}
+
+h2 {
+  font-size: var(--text-fluid-3xl);
+  font-weight: 700;
+}
+
+h3 {
+  font-size: var(--text-fluid-2xl);
+  font-weight: 600;
+}
+
+h4 {
+  font-size: var(--text-fluid-xl);
+  font-weight: 600;
+}
+
+h5 {
+  font-size: var(--text-fluid-lg);
+  font-weight: 600;
+}
+
+h6 {
+  font-size: var(--text-fluid-base);
+  font-weight: 600;
+}
+
+/* ========================================
+PARAGRAPH AND TEXT
+======================================== */
+p {
+  font-size: var(--text-fluid-base);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: 1em;
+  color: #374151;
+  max-width: 65ch; /* Optimal reading width */
+}
+
+@media (max-width: 767px) {
+  p {
+    max-width: 100%;
+  }
+}
+
+/* ========================================
+SEMANTIC TEXT ELEMENTS
+======================================== */
+small {
+  font-size: var(--text-fluid-xs);
+  color: #6b7280;
+}
+
+.lead {
+  font-size: var(--text-fluid-lg);
+  line-height: var(--line-height-relaxed);
+  color: #4b5563;
+  font-weight: 400;
+}
+
+.caption {
+  font-size: var(--text-fluid-xs);
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.label {
+  font-size: var(--text-fluid-sm);
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
+}
+
+/* ========================================
+COMPONENT TYPOGRAPHY
+======================================== */
+
+/* Card titles */
+.card-title {
+  font-size: var(--card-title-size);
+  font-weight: 600;
+  line-height: var(--line-height-tight);
+  color: #111827;
+  margin-bottom: 0.5em;
+}
+
+/* Section titles */
+.section-title {
+  font-size: var(--section-title-size);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  color: #111827;
+  margin-bottom: 1em;
+}
+
+@media (max-width: 767px) {
+  .section-title {
+    font-size: var(--text-fluid-xl);
+  }
+}
+
+/* Modal titles */
+.modal-title {
+  font-size: var(--modal-title-size);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  color: #111827;
+}
+
+@media (max-width: 767px) {
+  .modal-title {
+    font-size: var(--text-fluid-lg);
+  }
+}
+
+/* Button text */
+.button-text {
+  font-size: var(--button-text-size);
+  font-weight: 600;
+  line-height: var(--line-height-normal);
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+/* Input and form elements */
+.input-text {
+  font-size: var(--input-size);
+  line-height: var(--line-height-normal);
+  color: #374151;
+}
+
+@media (max-width: 767px) {
+  /* Prevent zoom on focus in iOS */
+  .input-text {
+    font-size: 16px;
+  }
+}
+
+.input-label {
+  font-size: var(--label-size);
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25em;
+  display: block;
+}
+
+/* Links */
+.link {
+  font-size: inherit;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* ========================================
+SPECIALIZED TYPOGRAPHY
+======================================== */
+
+/* Voice recording transcript */
+.transcript-text {
+  font-size: var(--text-fluid-base);
+  line-height: var(--line-height-relaxed);
+  color: #1f2937;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas,
+    'Courier New', monospace;
+}
+
+@media (max-width: 767px) {
+  .transcript-text {
+    font-size: var(--text-fluid-sm);
+  }
+}
+
+.transcript-placeholder {
+  font-size: var(--text-fluid-base);
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Error messages */
+.error-text {
+  font-size: var(--text-fluid-sm);
+  color: #dc2626;
+  font-weight: 500;
+}
+
+/* Success messages */
+.success-text {
+  font-size: var(--text-fluid-sm);
+  color: #059669;
+  font-weight: 500;
+}
+
+/* Loading states */
+.loading-text {
+  font-size: var(--text-fluid-base);
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Navigation items */
+.nav-item {
+  font-size: var(--text-fluid-sm);
+  font-weight: 500;
+  color: #6b7280;
+  transition: color 0.2s ease;
+}
+
+.nav-item.active {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+/* Stats and metrics */
+.stat-value {
+  font-size: var(--text-fluid-2xl);
+  font-weight: 700;
+  color: #111827;
+  line-height: var(--line-height-tight);
+}
+
+@media (max-width: 767px) {
+  .stat-value {
+    font-size: var(--text-fluid-xl);
+  }
+}
+
+.stat-label {
+  font-size: var(--text-fluid-sm);
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+/* ========================================
+ACCESSIBILITY TYPOGRAPHY
+======================================== */
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible styling */
+.focus-visible:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  body {
+    color: #000;
+    background-color: #fff;
+  }
+
+  .card-title,
+  .section-title,
+  .modal-title {
+    color: #000;
+  }
+
+  .link {
+    color: #0000ff;
+  }
+
+  .link:hover {
+    color: #0000ff;
+    text-decoration: underline;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .link {
+    transition: none;
+  }
+
+  .nav-item {
+    transition: none;
+  }
+}
+
+/* ========================================
+PRINT TYPOGRAPHY
+======================================== */
+@media print {
+  body {
+    font-size: 12pt;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
+  }
+
+  h1 {
+    font-size: 18pt;
+  }
+
+  h2 {
+    font-size: 16pt;
+  }
+
+  h3 {
+    font-size: 14pt;
+  }
+
+  .link {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  .nav-item,
+  .button-text,
+  .input-text {
+    font-family: inherit;
+  }
+}

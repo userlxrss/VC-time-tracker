@@ -1,0 +1,494 @@
+/*
+===========================================
+COMPONENT-SPECIFIC RESPONSIVE STYLES
+===========================================
+Tailwind utility classes for responsive components
+*/
+
+/* ========================================
+APP LAYOUT RESPONSIVENESS
+======================================== */
+.app-container {
+  @apply min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100;
+}
+
+.app-content {
+  @apply container mx-auto px-4 py-8 max-w-4xl;
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .app-content {
+    @apply px-4 py-6;
+  }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-content {
+    @apply px-6 py-8;
+  }
+}
+
+/* ========================================
+HEADER RESPONSIVENESS
+======================================== */
+.header-container {
+  @apply text-center mb-12;
+}
+
+@media (max-width: 767px) {
+  .header-container {
+    @apply mb-8;
+  }
+}
+
+.header-title {
+  @apply text-4xl font-bold text-gray-800 mb-2;
+}
+
+@media (max-width: 767px) {
+  .header-title {
+    @apply text-2xl sm:text-3xl;
+  }
+}
+
+.header-subtitle {
+  @apply text-gray-600;
+}
+
+@media (max-width: 767px) {
+  .header-subtitle {
+    @apply text-sm;
+  }
+}
+
+/* ========================================
+JOURNAL SECTIONS RESPONSIVENESS
+======================================== */
+.journal-section {
+  @apply bg-white rounded-xl shadow-lg p-6 transition-all hover:shadow-xl;
+}
+
+@media (max-width: 767px) {
+  .journal-section {
+    @apply p-4 rounded-lg;
+  }
+}
+
+.journal-header {
+  @apply flex items-center justify-between mb-4;
+}
+
+@media (max-width: 767px) {
+  .journal-header {
+    @apply flex-col items-start gap-3;
+  }
+}
+
+.journal-title-group {
+  @apply flex items-center gap-3;
+}
+
+.journal-title {
+  @apply text-xl font-semibold text-gray-800;
+}
+
+@media (max-width: 767px) {
+  .journal-title {
+    @apply text-lg;
+  }
+}
+
+.journal-icon {
+  @apply w-5 h-5;
+}
+
+@media (max-width: 767px) {
+  .journal-icon {
+    @apply w-4 h-4;
+  }
+}
+
+/* ========================================
+VOICE BUTTON RESPONSIVENESS
+======================================== */
+.voice-button {
+  @apply mic-button idle flex items-center gap-2 px-4 py-2 text-white;
+}
+
+@media (max-width: 767px) {
+  .voice-button {
+    @apply w-full justify-center py-3;
+  }
+}
+
+/* ========================================
+TEXTAREA RESPONSIVENESS
+======================================== */
+.journal-textarea {
+  @apply w-full h-40 p-4 border-2 border-gray-200 rounded-lg resize-none focus:outline-none focus:border-blue-400 transition-colors;
+}
+
+@media (max-width: 767px) {
+  .journal-textarea {
+    @apply h-32 p-3 text-base;
+    /* Prevent zoom on iOS */
+    font-size: 16px;
+  }
+}
+
+/* ========================================
+SAVE BUTTON RESPONSIVENESS
+======================================== */
+.save-button-container {
+  @apply flex justify-center;
+}
+
+.save-button {
+  @apply flex items-center gap-3 px-8 py-4 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl;
+}
+
+@media (max-width: 767px) {
+  .save-button {
+    @apply w-full px-6 py-3;
+  }
+}
+
+/* ========================================
+FOOTER RESPONSIVENESS
+======================================== */
+.footer-container {
+  @apply mt-16 text-center text-gray-600;
+}
+
+@media (max-width: 767px) {
+  .footer-container {
+    @apply mt-12;
+  }
+}
+
+.footer-content {
+  @apply flex items-center justify-center gap-2;
+}
+
+@media (max-width: 767px) {
+  .footer-content {
+    @apply flex-col gap-1;
+  }
+}
+
+.footer-date {
+  @apply text-sm;
+}
+
+@media (max-width: 767px) {
+  .footer-date {
+    @apply text-xs;
+  }
+}
+
+/* ========================================
+VOICE MODAL RESPONSIVENESS
+======================================== */
+.voice-modal-overlay {
+  @apply fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in;
+}
+
+@media (max-width: 767px) {
+  .voice-modal-overlay {
+    @apply items-end;
+  }
+}
+
+.voice-modal-content {
+  @apply bg-white rounded-2xl p-8 max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up;
+}
+
+@media (max-width: 767px) {
+  .voice-modal-content {
+    @apply rounded-t-2xl rounded-b-none p-6 max-h-[85vh];
+  }
+}
+
+.voice-modal-header {
+  @apply flex items-center justify-between mb-6;
+}
+
+@media (max-width: 767px) {
+  .voice-modal-header {
+    @apply mb-4;
+  }
+}
+
+.voice-modal-title {
+  @apply text-2xl font-bold text-gray-800;
+}
+
+@media (max-width: 767px) {
+  .voice-modal-title {
+    @apply text-xl;
+  }
+}
+
+/* ========================================
+TEMPLATE GUIDE RESPONSIVENESS
+======================================== */
+.template-guide {
+  @apply mb-6 p-4 rounded-lg border;
+}
+
+@media (max-width: 767px) {
+  .template-guide {
+    @apply mb-4 p-3 text-sm;
+  }
+}
+
+.template-title {
+  @apply text-sm font-semibold mb-2;
+}
+
+.template-content {
+  @apply text-sm whitespace-pre-wrap font-mono;
+}
+
+@media (max-width: 767px) {
+  .template-content {
+    @apply text-xs;
+  }
+}
+
+.template-hint {
+  @apply text-xs mt-2;
+}
+
+/* ========================================
+RECORDING CONTROLS RESPONSIVENESS
+======================================== */
+.recording-controls {
+  @apply text-center py-8;
+}
+
+@media (max-width: 767px) {
+  .recording-controls {
+    @apply py-6;
+  }
+}
+
+.record-button-large {
+  @apply group relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg;
+}
+
+@media (max-width: 767px) {
+  .record-button-large {
+    @apply w-20 h-20;
+  }
+}
+
+.record-button-small {
+  @apply px-8 py-4 rounded-lg font-medium transition-colors;
+}
+
+@media (max-width: 767px) {
+  .record-button-small {
+    @apply w-full py-3;
+  }
+}
+
+/* ========================================
+TRANSCRIPT DISPLAY RESPONSIVENESS
+======================================== */
+.transcript-container {
+  @apply mb-6;
+}
+
+@media (max-width: 767px) {
+  .transcript-container {
+    @apply mb-4;
+  }
+}
+
+.transcript-label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+.transcript-display {
+  @apply bg-gray-50 rounded-lg p-4 min-h-[100px] border-2 border-gray-200;
+}
+
+@media (max-width: 767px) {
+  .transcript-display {
+    @apply p-3 min-h-[80px] text-sm;
+  }
+}
+
+.transcript-textarea {
+  @apply w-full h-32 p-3 border-2 border-gray-200 rounded-lg resize-none focus:outline-none focus:border-blue-400 transition-colors;
+}
+
+@media (max-width: 767px) {
+  .transcript-textarea {
+    @apply h-24 p-2 text-base;
+    /* Prevent zoom on iOS */
+    font-size: 16px;
+  }
+}
+
+/* ========================================
+ACTION BUTTONS RESPONSIVENESS
+======================================== */
+.action-buttons {
+  @apply flex gap-3;
+}
+
+@media (max-width: 767px) {
+  .action-buttons {
+    @apply flex-col gap-2;
+  }
+}
+
+.action-button-primary {
+  @apply flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors;
+}
+
+@media (max-width: 767px) {
+  .action-button-primary {
+    @apply w-full;
+  }
+}
+
+.action-button-secondary {
+  @apply flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors;
+}
+
+@media (max-width: 767px) {
+  .action-button-secondary {
+    @apply w-full;
+  }
+}
+
+.action-button-danger {
+  @apply flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors;
+}
+
+@media (max-width: 767px) {
+  .action-button-danger {
+    @apply w-full;
+  }
+}
+
+/* ========================================
+ERROR DISPLAY RESPONSIVENESS
+======================================== */
+.error-message {
+  @apply flex items-center gap-2 mb-6 p-3 bg-red-50 rounded-lg text-red-700;
+}
+
+@media (max-width: 767px) {
+  .error-message {
+    @apply mb-4 p-2 text-sm;
+  }
+}
+
+.error-icon {
+  @apply w-4 h-4 flex-shrink-0;
+}
+
+/* ========================================
+RESPONSIVE HELPERS
+======================================== */
+.mobile-only {
+  @apply block;
+}
+
+.tablet-only {
+  @apply hidden;
+}
+
+.desktop-only {
+  @apply hidden;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .mobile-only {
+    @apply hidden;
+  }
+  .tablet-only {
+    @apply block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-only {
+    @apply hidden;
+  }
+  .tablet-only {
+    @apply hidden;
+  }
+  .desktop-only {
+    @apply block;
+  }
+}
+
+/* Touch-friendly spacing */
+.touch-margin {
+  @apply my-2;
+}
+
+@media (max-width: 767px) {
+  .touch-margin {
+    @apply my-3;
+  }
+}
+
+/* Responsive text sizing */
+.responsive-text-base {
+  @apply text-base;
+}
+
+@media (max-width: 767px) {
+  .responsive-text-base {
+    @apply text-sm;
+  }
+}
+
+.responsive-text-lg {
+  @apply text-lg;
+}
+
+@media (max-width: 767px) {
+  .responsive-text-lg {
+    @apply text-base;
+  }
+}
+
+.responsive-text-xl {
+  @apply text-xl;
+}
+
+@media (max-width: 767px) {
+  .responsive-text-xl {
+    @apply text-lg;
+  }
+}
+
+/* Responsive padding */
+.responsive-padding {
+  @apply p-4;
+}
+
+@media (max-width: 767px) {
+  .responsive-padding {
+    @apply p-3;
+  }
+}
+
+.responsive-padding-lg {
+  @apply p-6;
+}
+
+@media (max-width: 767px) {
+  .responsive-padding-lg {
+    @apply p-4;
+  }
+}

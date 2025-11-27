@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .voice-modal-backdrop {
+    @apply fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .voice-modal-content {
+    @apply bg-white rounded-2xl p-8 max-w-2xl w-[90%] max-h-[90vh] overflow-y-auto shadow-2xl;
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .mic-button {
+    @apply relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-200;
+  }
+
+  .mic-button.recording {
+    @apply bg-red-500 shadow-lg shadow-red-500/50;
+    animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .mic-button.idle {
+    @apply bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-blue-500/50;
+  }
+
+  .status-label {
+    @apply text-sm font-medium text-gray-600 transition-colors duration-200;
+  }
+
+  .status-label.listening {
+    @apply text-red-500 font-semibold;
+  }
+
+  .status-label.processing {
+    @apply text-orange-500 font-semibold;
+  }
+
+  .status-label.success {
+    @apply text-green-500 font-semibold;
+  }
+
+  .status-label.error {
+    @apply text-red-600 font-semibold;
+  }
+}

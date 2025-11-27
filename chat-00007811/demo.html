@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Dark Mode Transformation Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Basic Dark Mode Styles */
+        .basic-dark {
+            background: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .basic-dark .sidebar {
+            background: #2d2d2d;
+            border-right: 1px solid #404040;
+        }
+
+        .basic-dark .card {
+            background: #2d2d2d;
+            border: 1px solid #404040;
+        }
+
+        .basic-dark .button {
+            background: #404040;
+            color: #ffffff;
+        }
+
+        .basic-dark .nav-item {
+            color: #cccccc;
+            padding: 12px 16px;
+            border-radius: 4px;
+        }
+
+        .basic-dark .nav-item:hover {
+            background: #404040;
+        }
+
+        /* Premium Dark Mode Styles */
+        .premium-dark {
+            background: #0a0a0a;
+            color: #e4e4e7;
+            background-image:
+                radial-gradient(circle at 25% 25%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+        }
+
+        .premium-dark .sidebar {
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .premium-dark .card {
+            background: rgba(17, 17, 17, 0.8);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow:
+                0 4px 6px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .premium-dark .card:hover {
+            transform: translateY(-4px);
+            box-shadow:
+                0 12px 24px rgba(139, 92, 246, 0.15),
+                0 8px 16px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+
+        .premium-dark .button {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.15));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #e4e4e7;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .premium-dark .button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .premium-dark .button:hover::before {
+            left: 100%;
+        }
+
+        .premium-dark .button:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.25));
+            border-color: rgba(139, 92, 246, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+        }
+
+        .premium-dark .nav-item {
+            color: #a1a1aa;
+            padding: 12px 20px;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            font-weight: 500;
+            letter-spacing: 0.025em;
+        }
+
+        .premium-dark .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 0;
+            background: linear-gradient(180deg, #8b5cf6, #3b82f6);
+            border-radius: 0 3px 3px 0;
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .premium-dark .nav-item:hover {
+            background: rgba(139, 92, 246, 0.1);
+            color: #e4e4e7;
+            padding-left: 28px;
+        }
+
+        .premium-dark .nav-item:hover::before {
+            height: 24px;
+        }
+
+        .premium-dark .nav-item.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.1));
+            color: #ffffff;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .premium-dark .nav-item.active::before {
+            height: 32px;
+        }
+
+        /* Color Palette Styles */
+        .color-swatch {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Typography Styles */
+        .text-gradient {
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Glass Morphism Effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .pulse-animation {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Form Styles */
+        .premium-dark input,
+        .premium-dark textarea {
+            background: rgba(17, 17, 17, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e4e4e7;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .premium-dark input:focus,
+        .premium-dark textarea:focus {
+            outline: none;
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            background: rgba(17, 17, 17, 0.8);
+        }
+
+        /* Comparison Slider */
+        .comparison-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+        }
+
+        .comparison-slider {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #8b5cf6, #3b82f6);
+            cursor: ew-resize;
+            z-index: 10;
+        }
+
+        .comparison-slider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .comparison-slider::after {
+            content: '⟷';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="basic-dark min-h-screen">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 p-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gradient">Premium Dark Mode Demo</h1>
+            <div class="flex gap-4">
+                <button id="basicModeBtn" class="px-6 py-3 rounded-lg button font-semibold transition-all">
+                    Basic Dark
+                </button>
+                <button id="premiumModeBtn" class="px-6 py-3 rounded-lg button font-semibold transition-all">
+                    Premium Dark
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-12 px-6">
+        <div class="max-w-7xl mx-auto">
+            <!-- Before/After Comparison -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold mb-8 text-center">Before/After Comparison</h2>
+                <div class="comparison-container h-96 relative">
+                    <div id="beforeView" class="absolute inset-0 basic-dark p-8">
+                        <div class="grid grid-cols-2 gap-6 h-full">
+                            <div class="card p-6 rounded-lg">
+                                <h3 class="text-xl font-bold mb-4">Basic Card</h3>
+                                <p class="mb-4">Simple dark mode styling with flat colors and basic shadows.</p>
+                                <button class="button px-4 py-2 rounded">Basic Button</button>
+                            </div>
+                            <div class="card p-6 rounded-lg">
+                                <h3 class="text-xl font-bold mb-4">Another Card</h3>
+                                <ul class="space-y-2">
+                                    <li>• Simple list item</li>
+                                    <li>• No special effects</li>
+                                    <li>• Basic styling</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="afterView" class="absolute inset-0 premium-dark p-8" style="clip-path: inset(0 50% 0 0);">
+                        <div class="grid grid-cols-2 gap-6 h-full">
+                            <div class="card p-6 rounded-lg">
+                                <h3 class="text-xl font-bold mb-4 text-gradient">Premium Card</h3>
+                                <p class="mb-4">Luxurious dark mode with glass morphism, gradients, and smooth animations.</p>
+                                <button class="button px-4 py-2 rounded font-semibold">Premium Button</button>
+                            </div>
+                            <div class="card p-6 rounded-lg">
+                                <h3 class="text-xl font-bold mb-4 text-gradient">Enhanced Card</h3>
+                                <ul class="space-y-3">
+                                    <li class="flex items-center gap-2">
+                                        <span class="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></span>
+                                        Glass morphism effects
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span class="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></span>
+                                        Smooth animations
+                                    </li>
+                                    <li class="flex items-center gap-2">
+                                        <span class="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></span>
+                                        Premium gradients
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-slider" id="comparisonSlider"></div>
+                </div>
+            </section>
+
+            <!-- Interactive Sidebar Demo -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold mb-8 text-center">Interactive Navigation</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1">
+                        <div class="sidebar rounded-xl p-6 h-full">
+                            <h3 class="text-xl font-bold mb-6 text-gradient">Navigation Menu</h3>
+                            <nav class="space-y-2">
+                                <div class="nav-item active cursor-pointer">
+                                    Dashboard
+                                </div>
+                                <div class="nav-item cursor-pointer">
+                                    Analytics
+                                </div>
+                                <div class="nav-item cursor-pointer">
+                                    Projects
+                                </div>
+                                <div class="nav-item cursor-pointer">
+                                    Team
+                                </div>
+                                <div class="nav-item cursor-pointer">
+                                    Settings
+                                </div>
+                                <div class="nav-item cursor-pointer">
+                                    Documentation
+                                </div>
+                            </nav>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="card p-8 rounded-xl">
+                            <h3 class="text-2xl font-bold mb-6 text-gradient">Content Area</h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <h4 class="text-xl font-semibold mb-3">Welcome to Premium Dark Mode</h4>
+                                    <p class="text-gray-400 leading-relaxed">
+                                        Experience the transformation from basic dark mode to a premium,
+                                        luxurious interface design. Our implementation features glass morphism effects,
+                                        smooth animations, and elegant gradients that create a sophisticated user experience.
+                                    </p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="glass p-4 rounded-lg">
+                                        <h5 class="font-semibold mb-2 text-gradient">Glass Morphism</h5>
+                                        <p class="text-sm text-gray-400">Frosted glass effects with backdrop blur</p>
+                                    </div>
+                                    <div class="glass p-4 rounded-lg">
+                                        <h5 class="font-semibold mb-2 text-gradient">Premium Gradients</h5>
+                                        <p class="text-sm text-gray-400">Elegant color transitions throughout</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Premium Card Examples -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold mb-8 text-center">Premium Card Showcase</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="card p-6 rounded-xl">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg mb-4 float-animation"></div>
+                        <h3 class="text-xl font-bold mb-3 text-gradient">Animated Elements</h3>
+                        <p class="text-gray-400 mb-4">Cards with subtle floating animations and hover effects that enhance the premium feel.</p>
+                        <div class="flex gap-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold glass">Animation</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold glass">Premium</span>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 rounded-xl">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-500 rounded-lg mb-4 pulse-animation"></div>
+                        <h3 class="text-xl font-bold mb-3 text-gradient">Interactive Design</h3>
+                        <p class="text-gray-400 mb-4">Responsive interactions with smooth transitions and micro-animations.</p>
+                        <div class="flex gap-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold glass">Interactive</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold glass">Modern</span>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 rounded-xl">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg mb-4"></div>
+                        <h3 class="text-xl font-bold mb-3 text-gradient">Luxury Styling</h3>
+                        <p class="text-gray-400 mb-4">High-end visual design with attention to detail and sophisticated aesthetics.</p>
+                        <div class="flex gap-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold glass">Luxury</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold glass">Elegant</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Color Palette Showcase -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold mb-8 text-center">Premium Color Palette</h2>
+                <div class="card p-8 rounded-xl">
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                        <div class="text-center">
+                            <div class="color-swatch h-20 rounded-lg mb-2" style="background: #0a0a0a;"></div>
+                            <p class="text-sm font-semibold">Deep Black</p>
+                            <p class="text-xs text-gray-500">#0a0a0a</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="color-swatch h-20 rounded-lg mb-2" style="background: #111111;"></div>
+                            <p class="text-sm font-semibold">Near Black</p>
+                            <p class="text-xs text-gray-500">#111111</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="color-swatch h-20 rounded-lg mb-2" style="background: #8b5cf6;"></div>
+                            <p class="text-sm font-semibold">Royal Purple</p>
+                            <p class="text-xs text-gray-500">#8b5cf6</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="color-swatch h-20 rounded-lg mb-2" style="background: #3b82f6;"></div>
+                            <p class="text-sm font-semibold">Ocean Blue</p>
+                            <p class="text-xs text-gray-500">#3b82f6</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="color-swatch h-20 rounded-lg mb-2" style="background: #e4e4e7;"></div>
+                            <p class="text-sm font-semibold">Soft White</p>
+                            <p class="text-xs text-gray-500">#e4e4e7</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="color-swatch h-20 rounded-lg mb-2" style="background: #a1a1aa;"></div>
+                            <p class="text-sm font-semibold">Silver Gray</p>
+                            <p class="text-xs text-gray-500">#a1a1aa</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="color-swatch h-20 rounded-lg mb-2" style="background: linear-gradient(135deg, #8b5cf6, #3b82f6);"></div>
+                            <p class="text-sm font-semibold">Premium Gradient</p>
+                            <p class="text-xs text-gray-500">Mixed</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="color-swatch h-20 rounded-lg mb-2 glass"></div>
+                            <p class="text-sm font-semibold">Glass Effect</p>
+                            <p class="text-xs text-gray-500">Blur</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Typography Hierarchy -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold mb-8 text-center">Typography Hierarchy</h2>
+                <div class="card p-8 rounded-xl space-y-6">
+                    <div>
+                        <h1 class="text-5xl font-bold text-gradient mb-2">Heading 1</h1>
+                        <p class="text-sm text-gray-500">Main titles with gradient effects</p>
+                    </div>
+                    <div>
+                        <h2 class="text-4xl font-bold mb-2">Heading 2</h2>
+                        <p class="text-sm text-gray-500">Section headers with strong emphasis</p>
+                    </div>
+                    <div>
+                        <h3 class="text-3xl font-semibold mb-2">Heading 3</h3>
+                        <p class="text-sm text-gray-500">Subsection titles</p>
+                    </div>
+                    <div>
+                        <h4 class="text-2xl font-medium mb-2">Heading 4</h4>
+                        <p class="text-sm text-gray-500">Card titles and feature names</p>
+                    </div>
+                    <div>
+                        <p class="text-lg leading-relaxed text-gray-300">
+                            Body text with optimal readability. Premium dark mode ensures excellent contrast
+                            while maintaining eye comfort during extended use.
+                        </p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">
+                            Secondary text information, captions, and metadata with reduced visual weight.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Interactive Elements -->
+            <section class="mb-12">
+                <h2 class="text-3xl font-bold mb-8 text-center">Interactive Elements</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Buttons Showcase -->
+                    <div class="card p-8 rounded-xl">
+                        <h3 class="text-xl font-bold mb-6 text-gradient">Button Variations</h3>
+                        <div class="space-y-4">
+                            <div class="flex gap-4">
+                                <button class="button px-6 py-3 rounded-lg font-semibold">
+                                    Primary Button
+                                </button>
+                                <button class="button px-6 py-3 rounded-lg font-semibold glass">
+                                    Glass Button
+                                </button>
+                            </div>
+                            <div class="flex gap-4">
+                                <button class="button px-4 py-2 rounded-lg text-sm">
+                                    Small Button
+                                </button>
+                                <button class="button px-8 py-4 rounded-lg text-lg font-bold">
+                                    Large Button
+                                </button>
+                            </div>
+                            <div class="flex gap-4">
+                                <button class="button px-6 py-3 rounded-lg font-semibold disabled:opacity-50" disabled>
+                                    Disabled State
+                                </button>
+                                <button class="button px-6 py-3 rounded-lg font-semibold" style="background: linear-gradient(135deg, #10b981, #14b8a6);">
+                                    Success Button
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Elements -->
+                    <div class="card p-8 rounded-xl">
+                        <h3 class="text-xl font-bold mb-6 text-gradient">Form Elements</h3>
+                        <form class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Input Field</label>
+                                <input type="text" placeholder="Enter your text..." class="w-full px-4 py-3 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Textarea</label>
+                                <textarea placeholder="Enter your message..." rows="3" class="w-full px-4 py-3 rounded-lg resize-none"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Select Dropdown</label>
+                                <select class="w-full px-4 py-3 rounded-lg">
+                                    <option>Option 1</option>
+                                    <option>Option 2</option>
+                                    <option>Option 3</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="button px-6 py-3 rounded-lg font-semibold w-full">
+                                Submit Form
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features Grid -->
+            <section>
+                <h2 class="text-3xl font-bold mb-8 text-center">Premium Features</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="card p-6 rounded-xl text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">Dark Mode</h3>
+                        <p class="text-sm text-gray-400">Eye-friendly interface with reduced blue light</p>
+                    </div>
+
+                    <div class="card p-6 rounded-xl text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">Performance</h3>
+                        <p class="text-sm text-gray-400">Optimized for speed and smooth interactions</p>
+                    </div>
+
+                    <div class="card p-6 rounded-xl text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">Customization</h3>
+                        <p class="text-sm text-gray-400">Flexible design system for unique branding</p>
+                    </div>
+
+                    <div class="card p-6 rounded-xl text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-purple-500 rounded-2xl flex items-center justify-center">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">Responsive</h3>
+                        <p class="text-sm text-gray-400">Perfect on all devices and screen sizes</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        // Mode switching
+        const body = document.body;
+        const basicBtn = document.getElementById('basicModeBtn');
+        const premiumBtn = document.getElementById('premiumModeBtn');
+
+        basicBtn.addEventListener('click', () => {
+            body.className = 'basic-dark min-h-screen';
+            basicBtn.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.25))';
+            premiumBtn.style.background = '';
+        });
+
+        premiumBtn.addEventListener('click', () => {
+            body.className = 'premium-dark min-h-screen';
+            premiumBtn.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.25))';
+            basicBtn.style.background = '';
+        });
+
+        // Navigation interaction
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Comparison slider
+        const slider = document.getElementById('comparisonSlider');
+        const afterView = document.getElementById('afterView');
+        const container = slider.parentElement;
+        let isDragging = false;
+
+        function updateSliderPosition(x) {
+            const rect = container.getBoundingClientRect();
+            const position = Math.max(0, Math.min(x - rect.left, rect.width));
+            const percentage = (position / rect.width) * 100;
+
+            slider.style.left = `${percentage}%`;
+            afterView.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
+        }
+
+        slider.addEventListener('mousedown', () => isDragging = true);
+        document.addEventListener('mouseup', () => isDragging = false);
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                updateSliderPosition(e.clientX);
+            }
+        });
+
+        // Touch support
+        slider.addEventListener('touchstart', () => isDragging = true);
+        document.addEventListener('touchend', () => isDragging = false);
+        document.addEventListener('touchmove', (e) => {
+            if (isDragging) {
+                updateSliderPosition(e.touches[0].clientX);
+            }
+        });
+
+        // Color swatch interaction
+        const colorSwatches = document.querySelectorAll('.color-swatch');
+        colorSwatches.forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                const color = window.getComputedStyle(swatch).background;
+                swatch.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    swatch.style.transform = '';
+                }, 200);
+            });
+        });
+
+        // Form interactions
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentElement.style.transform = 'scale(1.02)';
+            });
+            input.addEventListener('blur', () => {
+                input.parentElement.style.transform = '';
+            });
+        });
+
+        // Initialize premium mode
+        premiumBtn.click();
+    </script>
+</body>
+</html>

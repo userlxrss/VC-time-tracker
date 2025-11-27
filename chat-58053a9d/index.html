@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VC Time Tracker - Team Calendar</title>
+    <style>
+        /* Calendar Styles - EXACTLY AS SPECIFIED */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F9FAFB;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Wrapper */
+        .team-calendar-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .calendar-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #171717;
+            margin-bottom: 20px;
+        }
+
+        /* Calendar Card */
+        .calendar-card {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Navigation */
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .month-year {
+            font-size: 18px;
+            font-weight: 700;
+            color: #171717;
+            margin: 0;
+        }
+
+        .nav-arrow {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #E5E5E5;
+            background: white;
+            border-radius: 6px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #737373;
+        }
+
+        .nav-arrow:hover {
+            background: #F5F5F5;
+        }
+
+        /* Legend */
+        .legend-bar {
+            display: flex;
+            gap: 20px;
+            padding: 12px 16px;
+            background: #F8FAFC;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #737373;
+            font-weight: 500;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot.green { background: #22C55E; }
+        .dot.blue { background: #3B82F6; }
+        .dot.orange { background: #F59E0B; }
+        .dot.red { background: #EF4444; }
+        .dot.gray { background: #A3A3A3; }
+
+        /* CALENDAR GRID - THIS IS THE KEY PART */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        /* Weekday Headers */
+        .weekday {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #737373;
+            padding: 10px 0;
+            letter-spacing: 0.5px;
+        }
+
+        /* Day Cells */
+        .day-cell {
+            aspect-ratio: 1;
+            border: 1px solid #F5F5F5;
+            border-radius: 8px;
+            padding: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .day-cell:hover:not(.empty) {
+            background: #F8FAFC;
+            border-color: #E5E5E5;
+        }
+
+        .day-cell.empty {
+            border: none;
+            cursor: default;
+            background: transparent;
+        }
+
+        .day-cell.weekend {
+            background: #FAFAFA;
+        }
+
+        .day-cell.today {
+            background: #EFF6FF;
+            border: 2px solid #3B82F6;
+        }
+
+        .day-num {
+            font-size: 14px;
+            font-weight: 600;
+            color: #171717;
+        }
+
+        .day-cell.weekend .day-num {
+            color: #A3A3A3;
+        }
+
+        .today-tag {
+            font-size: 8px;
+            font-weight: 700;
+            color: #3B82F6;
+            text-transform: uppercase;
+            margin-top: auto;
+        }
+
+        /* Holidays Section */
+        .holidays-section {
+            background: white;
+            border: 1px solid #E5E5E5;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .holidays-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #171717;
+            margin: 0 0 16px 0;
+        }
+
+        .holiday-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .holiday-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #FAFAFA;
+            border-radius: 8px;
+        }
+
+        .h-date {
+            font-size: 13px;
+            color: #737373;
+            font-weight: 500;
+        }
+
+        .h-name {
+            font-size: 13px;
+            color: #171717;
+            font-weight: 600;
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #E5E5E5;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: #737373;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: #171717;
+            border-bottom-color: #3B82F6;
+        }
+
+        .tab-btn:hover {
+            color: #171717;
+        }
+    </style>
+</head>
+<body>
+    <div class="team-calendar-wrapper">
+        <h2 class="calendar-title">VC Time Tracker - Team Calendar</h2>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn">Dashboard</button>
+            <button class="tab-btn">Timesheet</button>
+            <button class="tab-btn active">Calendar</button>
+            <button class="tab-btn">Leave Requests</button>
+            <button class="tab-btn">Salary</button>
+            <button class="tab-btn">Settings</button>
+        </div>
+
+              <!-- Calendar Card -->
+        <div class="calendar-card">
+          <!-- Navigation -->
+          <div class="calendar-nav">
+            <button class="nav-arrow">‹</button>
+            <h3 class="month-year">November 2025</h3>
+            <button class="nav-arrow">›</button>
+          </div>
+
+          <!-- Legend -->
+          <div class="legend-bar">
+            <div class="legend-item"><span class="dot green"></span>Worked</div>
+            <div class="legend-item"><span class="dot blue"></span>Leave</div>
+            <div class="legend-item"><span class="dot orange"></span>Sick</div>
+            <div class="legend-item"><span class="dot red"></span>Holiday</div>
+            <div class="legend-item"><span class="dot gray"></span>Weekend</div>
+          </div>
+
+          <!-- CALENDAR GRID -->
+          <div class="calendar-grid">
+            <!-- Weekday Headers -->
+            <div class="weekday">Sun</div>
+            <div class="weekday">Mon</div>
+            <div class="weekday">Tue</div>
+            <div class="weekday">Wed</div>
+            <div class="weekday">Thu</div>
+            <div class="weekday">Fri</div>
+            <div class="weekday">Sat</div>
+
+            <!-- Empty cells (Nov 2025 starts on Saturday) -->
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+            <div class="day-cell empty"></div>
+
+            <!-- Nov 1 (Sat) -->
+            <div class="day-cell weekend">
+              <span class="day-num">1</span>
+            </div>
+
+            <!-- Nov 2 (Sun) -->
+            <div class="day-cell weekend">
+              <span class="day-num">2</span>
+            </div>
+
+            <!-- Nov 3-8 -->
+            <div class="day-cell">
+              <span class="day-num">3</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">4</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">5</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">6</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">7</span>
+            </div>
+            <div class="day-cell weekend">
+              <span class="day-num">8</span>
+            </div>
+
+            <!-- Nov 9 (Sun) -->
+            <div class="day-cell weekend">
+              <span class="day-num">9</span>
+            </div>
+
+            <!-- Nov 10-14 -->
+            <div class="day-cell">
+              <span class="day-num">10</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">11</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">12</span>
+            </div>
+
+            <!-- Nov 13 (TODAY) -->
+            <div class="day-cell today">
+              <span class="day-num">13</span>
+              <span class="today-tag">Today</span>
+            </div>
+
+            <div class="day-cell">
+              <span class="day-num">14</span>
+            </div>
+            <div class="day-cell weekend">
+              <span class="day-num">15</span>
+            </div>
+
+            <!-- Nov 16 (Sun) -->
+            <div class="day-cell weekend">
+              <span class="day-num">16</span>
+            </div>
+
+            <!-- Nov 17-22 -->
+            <div class="day-cell">
+              <span class="day-num">17</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">18</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">19</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">20</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">21</span>
+            </div>
+            <div class="day-cell weekend">
+              <span class="day-num">22</span>
+            </div>
+
+            <!-- Nov 23 (Sun) -->
+            <div class="day-cell weekend">
+              <span class="day-num">23</span>
+            </div>
+
+            <!-- Nov 24-29 -->
+            <div class="day-cell">
+              <span class="day-num">24</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">25</span>
+            </div>
+            <div class="day-cell holiday">
+              <span class="day-num">26</span>
+              <span class="today-tag" style="color: #EF4444;">Boxing Day</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">27</span>
+            </div>
+            <div class="day-cell">
+              <span class="day-num">28</span>
+            </div>
+            <div class="day-cell weekend">
+              <span class="day-num">29</span>
+            </div>
+
+            <!-- Nov 30 (Sun) -->
+            <div class="day-cell weekend">
+              <span class="day-num">30</span>
+            </div>
+          </div>
+        </div>
+
+            <!-- Holidays Section -->
+        <div class="holidays-section">
+          <h4 class="holidays-title">🇦🇺 Upcoming Australian Public Holidays</h4>
+          <div class="holiday-list">
+            <div class="holiday-item">
+              <span class="h-date">December 25, 2025 (Thu)</span>
+              <span class="h-name">Christmas Day</span>
+            </div>
+            <div class="holiday-item">
+              <span class="h-date">December 26, 2025 (Fri)</span>
+              <span class="h-name">Boxing Day</span>
+            </div>
+            <div class="holiday-item">
+              <span class="h-date">January 1, 2026 (Thu)</span>
+              <span class="h-name">New Year's Day</span>
+            </div>
+            <div class="holiday-item">
+              <span class="h-date">January 26, 2026 (Mon)</span>
+              <span class="h-name">Australia Day</span>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple calendar functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('VC Time Tracker Calendar Loaded');
+
+            // Add click handlers to day cells
+            const dayCells = document.querySelectorAll('.day-cell:not(.empty)');
+            dayCells.forEach(cell => {
+                cell.addEventListener('click', function() {
+                    const dayNum = this.querySelector('.day-num');
+                    if (dayNum) {
+                        console.log('Clicked day:', dayNum.textContent);
+                    }
+                });
+            });
+
+            // Navigation arrow functionality
+            const navArrows = document.querySelectorAll('.nav-arrow');
+            navArrows.forEach(arrow => {
+                arrow.addEventListener('click', function() {
+                    console.log('Navigation clicked:', this.textContent);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

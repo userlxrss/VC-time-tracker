@@ -1,0 +1,75 @@
+/* Journal Page Styles - Premium Dark Mode */
+
+.journal-page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: var(--space-lg);
+}
+
+.journal-header {
+  margin-bottom: var(--space-2xl);
+  text-align: center;
+}
+
+.journal-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--space-sm);
+}
+
+.journal-subtitle {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.journal-content {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: var(--space-2xl);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.journal-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.journal-sidebar {
+  position: sticky;
+  top: var(--space-lg);
+  height: fit-content;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .journal-content {
+    grid-template-columns: 1fr;
+  }
+
+  .journal-sidebar {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .journal-page {
+    padding: var(--space-md);
+  }
+
+  .journal-title {
+    font-size: 2rem;
+  }
+
+  .journal-content {
+    gap: var(--space-lg);
+  }
+}

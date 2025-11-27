@@ -1,0 +1,13 @@
+/* Additional app-specific styles */
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    border-color: rgba(59, 130, 246, 1);
+  }
+}
+
+textarea:focus {
+  animation: pulse-border 2s ease-in-out infinite;
+}

@@ -1,0 +1,369 @@
+/* ===================================================
+   JOURNAL PAGE - PREMIUM DARK MODE FIXES
+   Complete solution for all dark mode issues
+   =================================================== */
+
+/* Import base premium dark mode */
+@import url('./premium-dark-mode.css');
+
+/* Journal-Specific Dark Mode Fixes */
+:root {
+  /* Enhanced dark colors for journal components */
+  --journal-bg-primary: #0a0e1a;
+  --journal-bg-secondary: #141824;
+  --journal-bg-tertiary: #1a1f2e;
+  --journal-bg-quaternary: #212937;
+
+  /* Journal-specific accent colors */
+  --journal-mood-good: #10b981;
+  --journal-mood-neutral: #f59e0b;
+  --journal-mood-low: #ef4444;
+  --journal-energy-high: #3b82f6;
+  --journal-energy-medium: #8b5cf6;
+  --journal-energy-low: #64748b;
+}
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--journal-bg-primary);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+}
+
+/* ===================================================
+   CRITICAL DARK MODE FIXES
+   =================================================== */
+
+/* 1. Weekly Insight Card - Background Fix */
+.weekly-insight-card,
+.ai-insight-card {
+  background: var(--glass-bg-heavy) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--glass-border) !important;
+}
+
+.weekly-insight-card:hover,
+.ai-insight-card:hover {
+  background: var(--glass-bg-heavy) !important;
+  transform: translateY(-4px) scale-[1.02] !important;
+  box-shadow: var(--shadow-xl), var(--shadow-glow-heavy), 0 0 40px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* 2. New Entry Form - All Input Fields Background Fix */
+.form-input,
+.form-textarea,
+.search-input {
+  background: var(--journal-bg-tertiary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.search-input:focus {
+  background: var(--journal-bg-quaternary) !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder,
+.search-input::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+/* 3. Date Picker Fix */
+input[type="date"] {
+  background: var(--journal-bg-tertiary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+input[type="date"]:focus {
+  background: var(--journal-bg-quaternary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* 4. Photo Upload Button Fix */
+.file-upload-label {
+  background: var(--journal-bg-tertiary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.file-upload-label:hover {
+  background: var(--journal-bg-quaternary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* 5. Mood/Energy Sliders Background Fix */
+.mood-slider,
+.energy-slider {
+  background: var(--journal-bg-quaternary) !important;
+}
+
+.mood-slider::-webkit-slider-thumb,
+.energy-slider::-webkit-slider-thumb {
+  background: var(--accent-primary) !important;
+  border: 1px solid var(--accent-primary) !important;
+}
+
+.mood-slider::-moz-range-thumb,
+.energy-slider::-moz-range-thumb {
+  background: var(--accent-primary) !important;
+  border: 1px solid var(--accent-primary) !important;
+}
+
+/* 6. Reflections Textarea Fix */
+.form-textarea {
+  background: var(--journal-bg-tertiary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.form-textarea:focus {
+  background: var(--journal-bg-quaternary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* 7. Gratitude Textarea Fix */
+.gratitude-input-group .form-input {
+  background: var(--journal-bg-tertiary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* 8. Tags Input Field Fix */
+.tag-input-group .form-input {
+  background: var(--journal-bg-tertiary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ===================================================
+   PREMIUM ENHANCEMENTS
+   =================================================== */
+
+/* Glass Effects Enhancement */
+.glass-card,
+.journal-entries,
+.new-entry-form {
+  background: var(--glass-bg-heavy) !important;
+  backdrop-filter: blur(var(--glass-blur-heavy)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--shadow-lg), var(--shadow-glow-heavy) !important;
+}
+
+/* Hover Animations */
+.interactive-element:hover {
+  transform: translateY(-2px) scale-[1.02] !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.interactive-element:active {
+  transform: translateY(0) scale-[0.98] !important;
+}
+
+/* Enhanced Depth */
+.shadow-xl-shadow-black {
+  box-shadow: var(--shadow-xl), 0 20px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Micro-interactions */
+.btn-primary:hover {
+  transform: translateY(-2px) scale-[1.02] !important;
+  box-shadow: var(--shadow-md), 0 0 20px rgba(59, 130, 246, 0.4) !important;
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale-[0.95] !important;
+}
+
+/* Smooth Transitions */
+* {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease !important;
+}
+
+/* ===================================================
+   TEXT COLOR FIXES
+   =================================================== */
+
+/* White text for dark backgrounds */
+.weekly-insight-title,
+.form-title,
+.form-label,
+.entry-title,
+.entries-title,
+.search-input,
+.form-input,
+.form-textarea {
+  color: var(--text-primary) !important;
+}
+
+/* Light gray text for secondary content */
+.weekly-insight-content,
+.form-subtitle,
+.entry-preview,
+.entry-content,
+.entries-count,
+.metric-label {
+  color: var(--text-secondary) !important;
+}
+
+/* Muted text for tertiary content */
+.metric,
+.entry-date,
+.slider-marks,
+.text-muted {
+  color: var(--text-tertiary) !important;
+}
+
+/* ===================================================
+   BORDER FIXES
+   =================================================== */
+
+.form-input,
+.form-textarea,
+.search-input,
+.file-upload-label,
+.entry-card {
+  border-color: var(--border-primary) !important;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.search-input:focus {
+  border-color: var(--accent-primary) !important;
+}
+
+/* ===================================================
+   COMPONENT-SPECIFIC FIXES
+   =================================================== */
+
+/* Journal Entries Component */
+.journal-entries {
+  background: var(--glass-bg-heavy) !important;
+  color: var(--text-primary) !important;
+}
+
+.entry-card {
+  background: var(--journal-bg-tertiary) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+}
+
+.entry-card:hover {
+  background: var(--journal-bg-quaternary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* Tags and Gratitude Items */
+.tag,
+.gratitude-tag,
+.filter-tag,
+.tag-item,
+.gratitude-item {
+  background: var(--journal-bg-quaternary) !important;
+  border: 1px solid var(--border-accent) !important;
+  color: var(--text-primary) !important;
+}
+
+.gratitude-tag {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: var(--journal-mood-good) !important;
+}
+
+/* Buttons */
+.add-btn,
+.filter-btn {
+  background: var(--accent-primary) !important;
+  border-color: var(--accent-primary) !important;
+  color: var(--text-inverse) !important;
+}
+
+.filter-btn {
+  background: var(--journal-bg-tertiary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.filter-btn:hover {
+  background: var(--journal-bg-quaternary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+/* ===================================================
+   ACCESSIBILITY AND RESPONSIVE DESIGN
+   =================================================== */
+
+/* Focus States */
+.focus-ring:focus {
+  outline: 2px solid var(--accent-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .weekly-insight-card,
+  .new-entry-form,
+  .journal-entries {
+    border-width: 2px !important;
+  }
+
+  .form-input,
+  .form-textarea {
+    border-width: 2px !important;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile Responsive Fixes */
+@media (max-width: 768px) {
+  .journal-content {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .entries-controls {
+    flex-direction: column !important;
+  }
+}
+
+/* ===================================================
+   DEBUGGING AIDS
+   =================================================== */
+
+/* Uncomment for debugging dark mode issues */
+/*
+.debug-dark-mode * {
+  border: 1px solid red !important;
+  background-color: rgba(255, 0, 0, 0.1) !important;
+}
+
+.debug-dark-mode input,
+.debug-dark-mode textarea {
+  background-color: rgba(0, 255, 0, 0.2) !important;
+  border: 2px solid green !important;
+}
+*/

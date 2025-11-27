@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Favicon Generator</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .favicon-preview {
+            width: 512px;
+            height: 512px;
+            background: #1a1a1a;
+            border-radius: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 256px;
+            margin: 20px 0;
+            border: 2px solid #333;
+        }
+        .instructions {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        code {
+            background: #3a3a3a;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>⚡ Lightning Favicon Preview</h1>
+
+    <div class="favicon-preview">⚡</div>
+
+    <div class="instructions">
+        <h3>To save as favicon:</h3>
+        <ol>
+            <li>Take a screenshot of the preview above (Cmd+Shift+4 on Mac)</li>
+            <li>Crop to 512x512 pixels</li>
+            <li>Save as <code>favicon.png</code> in the <code>/public</code> directory</li>
+            <li>For ICO format, use an online converter like favicon.io</li>
+        </ol>
+
+        <h3>Quick Alternative:</h3>
+        <p>Visit <a href="https://favicon.io/favicon-generator/" style="color: #4CAF50;">favicon.io</a> and use the ⚡ emoji with dark background</p>
+    </div>
+
+    <script>
+        // Try to download the favicon automatically
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        // Dark background
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Lightning emoji
+        ctx.font = '256px Apple Color Emoji';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('⚡', 256, 256);
+
+        // Create download link
+        canvas.toBlob(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'favicon.png';
+            a.textContent = '⬇️ Download favicon.png';
+            a.style.display = 'block';
+            a.style.margin = '20px 0';
+            a.style.padding = '10px 20px';
+            a.style.background = '#4CAF50';
+            a.style.color = 'white';
+            a.style.textDecoration = 'none';
+            a.style.borderRadius = '6px';
+            a.style.width = '200px';
+            a.style.textAlign = 'center';
+            document.body.insertBefore(a, document.querySelector('.instructions'));
+        });
+    </script>
+</body>
+</html>

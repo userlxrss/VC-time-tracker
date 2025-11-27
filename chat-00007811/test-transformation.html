@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Dark Mode Transformation Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0e1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .glass-morphism {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .premium-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .premium-card:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.1);
+            transform: scale(1.02);
+        }
+
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(4px);
+        }
+
+        .sidebar-item.active {
+            color: white;
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 2px solid rgb(59, 130, 246);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .ai-glow {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(139, 92, 246, 0.1);
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="text-white">
+    <div class="flex h-screen">
+        <!-- Premium Sidebar -->
+        <aside class="w-64 bg-[#151923]/60 backdrop-blur-xl border-r border-white/10">
+            <div class="p-6">
+                <h2 class="text-xl font-bold gradient-text mb-8">Premium UI</h2>
+                <nav class="space-y-2">
+                    <a href="#" class="sidebar-item active flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        <span class="font-medium">Dashboard</span>
+                    </a>
+                    <a href="#" class="sidebar-item flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <span class="font-medium">Projects</span>
+                    </a>
+                    <a href="#" class="sidebar-item flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span class="font-medium">Team</span>
+                    </a>
+                    <a href="#" class="sidebar-item flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        </svg>
+                        <span class="font-medium">Settings</span>
+                    </a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 bg-[#0a0e1a] p-8 overflow-y-auto">
+            <div class="max-w-6xl mx-auto">
+                <!-- Header -->
+                <div class="mb-8">
+                    <h1 class="text-4xl font-bold text-white mb-2">Premium Dark Mode Test</h1>
+                    <p class="text-gray-400">No more heavy gray boxes - just pure elegance ✨</p>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="premium-card p-6 rounded-xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-blue-400">Revenue</h3>
+                            <div class="p-2 rounded-lg bg-blue-500/20">
+                                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-2xl font-bold text-white">$48,574</p>
+                        <p class="text-sm text-green-400 mt-1">+12% growth</p>
+                    </div>
+
+                    <div class="premium-card p-6 rounded-xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-purple-400">Users</h3>
+                            <div class="p-2 rounded-lg bg-purple-500/20">
+                                <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-2xl font-bold text-white">2,847</p>
+                        <p class="text-sm text-green-400 mt-1">+23% this week</p>
+                    </div>
+
+                    <div class="premium-card p-6 rounded-xl">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-green-400">Performance</h3>
+                            <div class="p-2 rounded-lg bg-green-500/20">
+                                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-2xl font-bold text-white">98.2%</p>
+                        <p class="text-sm text-green-400 mt-1">Excellent</p>
+                    </div>
+                </div>
+
+                <!-- AI Insights Card -->
+                <div class="ai-glow p-6 rounded-xl mb-8 float-animation">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="p-2 rounded-lg bg-purple-500/20 shimmer">
+                            <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-white">✨ AI Premium Insights</h3>
+                    </div>
+                    <p class="text-gray-300 mb-4">
+                        Your dark mode transformation is fucking gorgeous! Users love the elegant text-based navigation and premium glass morphism effects. The subtle animations and depth hierarchy create a luxury experience that feels expensive and professional.
+                    </p>
+                    <div class="flex items-center space-x-4">
+                        <button class="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-all duration-200 hover:scale-105">
+                            View Analytics
+                        </button>
+                        <button class="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-400 rounded-lg transition-all duration-200 hover:scale-105">
+                            Dismiss
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feature Showcase -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="premium-card p-6 rounded-xl">
+                        <h3 class="text-lg font-semibold text-white mb-4">🎯 Elegant Navigation</h3>
+                        <p class="text-gray-300 mb-4">No more heavy gray boxes! Just subtle text-based interactions with smooth hover effects.</p>
+                        <div class="bg-white/5 p-3 rounded-lg">
+                            <code class="text-sm text-blue-400">
+                                hover:bg-white/5 hover:translate-x-1
+                            </code>
+                        </div>
+                    </div>
+
+                    <div class="premium-card p-6 rounded-xl">
+                        <h3 class="text-lg font-semibold text-white mb-4">💎 Premium Cards</h3>
+                        <p class="text-gray-300 mb-4">Glass morphism effects with backdrop blur and subtle borders that catch the light.</p>
+                        <div class="bg-white/5 p-3 rounded-lg">
+                            <code class="text-sm text-purple-400">
+                                backdrop-blur-sm border-white/5
+                            </code>
+                        </div>
+                    </div>
+
+                    <div class="premium-card p-6 rounded-xl">
+                        <h3 class="text-lg font-semibold text-white mb-4">🌈 Rich Colors</h3>
+                        <p class="text-gray-300 mb-4">Deep near-black backgrounds with proper hierarchy and accent glows.</p>
+                        <div class="bg-white/5 p-3 rounded-lg">
+                            <code class="text-sm text-green-400">
+                                bg-[#0a0e1a] border-blue-500/30
+                            </code>
+                        </div>
+                    </div>
+
+                    <div class="premium-card p-6 rounded-xl">
+                        <h3 class="text-lg font-semibold text-white mb-4">⚡ Smooth Interactions</h3>
+                        <p class="text-gray-300 mb-4">Micro-animations and hover effects that make the interface feel alive.</p>
+                        <div class="bg-white/5 p-3 rounded-lg">
+                            <code class="text-sm text-orange-400">
+                                hover:scale-[1.02] transition-all
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Add interactive click handlers
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Add some sparkle effects
+        document.querySelectorAll('.premium-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.2)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.5)';
+            });
+        });
+    </script>
+</body>
+</html>

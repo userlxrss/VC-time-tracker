@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productivity Hub - Calendar Dark Mode Demo</title>
+    <meta name="description" content="Premium Productivity Hub with enhanced Calendar widget dark mode support">
+
+    <!-- Preload critical CSS -->
+    <link rel="preload" href="./premium-dark-mode.css" as="style">
+    <link rel="stylesheet" href="./premium-dark-mode.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+
+    <style>
+        /* Loading animation */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0e1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: #f8fafc;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(59, 130, 246, 0.3);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 18px;
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        /* Hide loading when app is ready */
+        .app-ready .loading-screen {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Critical CSS for immediate dark mode */
+        body {
+            background: #0a0e1a;
+            color: #f8fafc;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Theme toggle switch */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .theme-label {
+            color: #cbd5e1;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .theme-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #374151;
+            transition: 0.3s;
+            border-radius: 26px;
+            border: 1px solid #4b5563;
+        }
+
+        .switch:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .switch {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        input:checked + .switch:before {
+            transform: translateX(24px);
+        }
+
+        /* Header styles */
+        .header {
+            background: var(--bg-secondary, #141824);
+            border-bottom: 1px solid var(--border-subtle, #1e293b);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary, #f8fafc);
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* App layout */
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+            background: var(--bg-primary, #0a0e1a);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary, #0a0e1a);
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 16px;
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .header-actions {
+                justify-content: center;
+            }
+
+            .header-title {
+                text-align: center;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading Productivity Hub...</p>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="root">
+        <div class="app-layout">
+            <main class="main-content">
+                <header class="header">
+                    <h1 class="header-title">📅 Productivity Hub</h1>
+                    <div class="header-actions">
+                        <div class="theme-toggle">
+                            <span class="theme-label">Dark Mode</span>
+                            <div class="theme-switch">
+                                <input type="checkbox" id="theme-switch" checked>
+                                <label for="theme-switch" class="switch">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+                <div class="content">
+                    <!-- Calendar Demo Section -->
+                    <div style="padding: 24px; max-width: 1200px; margin: 0 auto;">
+                        <div style="margin-bottom: 32px;">
+                            <h2 style="color: #f8fafc; margin-bottom: 8px;">Calendar Widget Dark Mode Demo</h2>
+                            <p style="color: #cbd5e1; margin: 0;">Enhanced calendar with premium dark mode support, glassmorphism effects, and smooth interactions.</p>
+                        </div>
+
+                        <!-- Calendar Integration Demo -->
+                        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-bottom: 32px;">
+                            <!-- Calendar Widget -->
+                            <div style="background: rgba(26, 31, 46, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(71, 85, 105, 0.4); border-radius: 16px; padding: 24px;">
+                                <h3 style="color: #f8fafc; margin-top: 0; margin-bottom: 16px; font-size: 18px;">🗓️ Calendar</h3>
+                                <div id="calendar-container">
+                                    <!-- Calendar will be rendered here -->
+                                    <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">
+                                        <div style="font-size: 48px; margin-bottom: 16px;">📅</div>
+                                        <p>Loading calendar...</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Journal Entry Preview -->
+                            <div style="background: rgba(26, 31, 46, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(71, 85, 105, 0.4); border-radius: 16px; padding: 24px;">
+                                <h3 style="color: #f8fafc; margin-top: 0; margin-bottom: 16px; font-size: 18px;">📝 Today's Entry</h3>
+                                <div style="color: #cbd5e1; line-height: 1.7;">
+                                    <p style="margin-bottom: 16px;">
+                                        <strong style="color: #f8fafc;">Calendar Dark Mode Enhancement Complete!</strong>
+                                    </p>
+                                    <ul style="margin: 0; padding-left: 20px;">
+                                        <li>✅ Fixed white background issue - now uses dark slate-800 background</li>
+                                        <li>✅ Enhanced date readability with proper contrast</li>
+                                        <li>✅ Added premium glassmorphism effects</li>
+                                        <li>✅ Implemented smooth hover interactions</li>
+                                        <li>✅ Added subtle shadows and depth</li>
+                                        <li>✅ Created modern, professional appearance</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Features Grid -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+                            <div style="background: rgba(26, 31, 46, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(71, 85, 105, 0.4); border-radius: 16px; padding: 24px;">
+                                <h4 style="color: #60a5fa; margin-top: 0; margin-bottom: 12px;">🎨 Premium Design</h4>
+                                <p style="color: #cbd5e1; margin: 0;">Modern glassmorphism effects with sophisticated visual hierarchy and premium aesthetics.</p>
+                            </div>
+
+                            <div style="background: rgba(26, 31, 46, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(71, 85, 105, 0.4); border-radius: 16px; padding: 24px;">
+                                <h4 style="color: #a78bfa; margin-top: 0; margin-bottom: 12px;">🌙 Dark Mode Optimized</h4>
+                                <p style="color: #cbd5e1; margin: 0;">Perfect contrast ratios with slate-800 backgrounds and readable light gray text.</p>
+                            </div>
+
+                            <div style="background: rgba(26, 31, 46, 0.95); backdrop-filter: blur(20px); border: 1px solid rgba(71, 85, 105, 0.4); border-radius: 16px; padding: 24px;">
+                                <h4 style="color: #34d399; margin-top: 0; margin-bottom: 12px;">⚡ Interactive Elements</h4>
+                                <p style="color: #cbd5e1; margin: 0;">Smooth transitions, hover effects, and micro-interactions throughout the interface.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Theme Toggle Script -->
+    <script>
+        // Theme toggle functionality
+        const themeSwitch = document.getElementById('theme-switch');
+        const html = document.documentElement;
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        themeSwitch.checked = savedTheme === 'dark';
+
+        // Theme toggle handler
+        themeSwitch.addEventListener('change', function() {
+            const theme = this.checked ? 'dark' : 'light';
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        });
+
+        // Simple calendar implementation for demo
+        function renderCalendar() {
+            const container = document.getElementById('calendar-container');
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+            // Simple calendar HTML
+            let calendarHTML = `
+                <div style="text-align: center; margin-bottom: 16px;">
+                    <h4 style="color: #f8fafc; margin: 0; font-size: 16px;">
+                        ${monthNames[currentMonth]} ${currentYear}
+                    </h4>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px;">
+            `;
+
+            // Week days
+            weekDays.forEach(day => {
+                calendarHTML += `<div style="text-align: center; font-size: 11px; color: #94a3b8; font-weight: 600;">${day}</div>`;
+            });
+
+            calendarHTML += '</div><div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">';
+
+            // Calendar days (simplified)
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            // Empty cells for days before month starts
+            for (let i = 0; i < firstDay; i++) {
+                calendarHTML += '<div></div>';
+            }
+
+            // Days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const isToday = day === today.getDate();
+                const bgStyle = isToday
+                    ? 'background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; font-weight: 600; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);'
+                    : 'background: rgba(33, 41, 55, 0.6); border: 1px solid rgba(71, 85, 105, 0.3); color: #cbd5e1;';
+
+                calendarHTML += `
+                    <div style="
+                        aspect-ratio: 1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        ${bgStyle}
+                    " onmouseover="this.style.transform='translateY(-2px) scale(1.05)'"
+                       onmouseout="this.style.transform='translateY(0) scale(1)'">
+                        ${day}
+                    </div>
+                `;
+            }
+
+            calendarHTML += '</div>';
+            container.innerHTML = calendarHTML;
+        }
+
+        // Initialize calendar when page loads
+        window.addEventListener('load', function() {
+            renderCalendar();
+
+            // Hide loading screen
+            setTimeout(() => {
+                document.body.classList.add('app-ready');
+            }, 500);
+        });
+
+        // Re-render calendar when theme changes
+        themeSwitch.addEventListener('change', renderCalendar);
+    </script>
+</body>
+</html>
