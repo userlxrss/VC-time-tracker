@@ -11,6 +11,7 @@ import { LeaveTab } from './components/tabs/LeaveTab'
 import { SalaryTab } from './components/tabs/SalaryTab'
 import { CalendarTab } from './components/tabs/CalendarTab'
 import { SettingsTab } from './components/tabs/SettingsTab'
+import ClientOnlySalaryManagement from '../../../components/ClientOnlySalaryManagement'
 import { ArrowLeft } from 'lucide-react'
 
 type TabType = 'time-tracking' | 'timesheet' | 'leave' | 'salary' | 'calendar' | 'settings'
@@ -108,57 +109,65 @@ const canEdit: boolean = Boolean(isOwnProfile)
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Navigation Header */}
-      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
-            </button>
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {user.firstName}'s Profile
-            </h1>
+    <ClientOnlySalaryManagement
+      currentUserId={CURRENT_USER_ID}
+      targetEmployeeId={userId}
+      useSharedHistory={true}
+    >
+      {({ markAsPaid, confirmReceipt, salaryHistory, pendingSalaries, isProcessing }) => (
+        <div className="min-h-screen bg-gray-50 overflow-y-auto">
+          {/* Navigation Header */}
+          <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.push('/')}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
+                </button>
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {user.firstName}'s Profile
+                </h1>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">
+                  {currentUser?.firstName[0]}
+                </div>
+              </div>
+            </div>
+          </nav>
+
+          {/* User Header */}
+          <UserHeader user={user} canEdit={canEdit} />
+
+          {/* Permission Alert */}
+          {!canEdit && viewedUser && (
+            <PermissionAlert
+              currentUserRole={currentUser?.role || 'employee'}
+              viewedUserRole={viewedUser.role}
+              viewedUserName={viewedUser.firstName}
+            />
+          )}
+
+          {/* Tab Navigation */}
+          <div className="max-w-7xl mx-auto px-6">
+            <TabNavigation
+              tabs={tabs}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              canEdit={canEdit}
+            />
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">
-              {currentUser?.firstName[0]}
+
+          {/* Tab Content */}
+          <div className="max-w-7xl mx-auto px-6 pb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              {renderTabContent()}
             </div>
           </div>
         </div>
-      </nav>
-
-      {/* User Header */}
-      <UserHeader user={user} canEdit={canEdit} />
-
-      {/* Permission Alert */}
-      {!canEdit && viewedUser && (
-        <PermissionAlert
-          currentUserRole={currentUser?.role || 'employee'}
-          viewedUserRole={viewedUser.role}
-          viewedUserName={viewedUser.firstName}
-        />
       )}
-
-      {/* Tab Navigation */}
-      <div className="max-w-7xl mx-auto px-6">
-        <TabNavigation
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          canEdit={canEdit}
-        />
-      </div>
-
-      {/* Tab Content */}
-      <div className="max-w-7xl mx-auto px-6 pb-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          {renderTabContent()}
-        </div>
-      </div>
-    </div>
+    </ClientOnlySalaryManagement>
   )
 }

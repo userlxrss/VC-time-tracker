@@ -1,10 +1,10 @@
 export const USERS = [
   {
     id: 1,
-    firstName: "Maria",
+    firstName: "Ella",
     lastName: "Johnson",
     role: "boss",
-    email: "maria.johnson@company.com",
+    email: "ella.johnson@company.com",
     phone: "+1 (555) 123-4567",
     location: "San Francisco, CA",
     department: "Management",
@@ -12,10 +12,10 @@ export const USERS = [
   },
   {
     id: 2,
-    firstName: "Carlos",
+    firstName: "Paul",
     lastName: "Rodriguez",
     role: "boss",
-    email: "carlos.rodriguez@company.com",
+    email: "paul.rodriguez@company.com",
     phone: "+1 (555) 234-5678",
     location: "New York, NY",
     department: "Engineering",
