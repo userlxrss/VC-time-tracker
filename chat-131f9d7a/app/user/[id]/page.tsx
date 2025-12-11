@@ -80,7 +80,7 @@ export default function UserDetailPage() {
   // Integration hooks
   const { clockIn, clockOut, startBreak, endBreak, currentStatus } = useTimeTracking(userId);
   const { approveLeave, denyLeave, pendingRequests } = useLeaveManagement();
-  const { confirmSalaryPayment, pendingSalaries, salaryHistory } = useSalaryManagement();
+  const { confirmSalaryPayment, pendingSalaries, salaryHistory, refreshSalaryData } = useSalaryManagement();
   const { markAsRead, notifications } = useNotifications(currentUserId);
   const [allSalaryRecords, setAllSalaryRecords] = useState<any[]>([]);
 
@@ -119,6 +119,7 @@ export default function UserDetailPage() {
   const [noteText, setNoteText] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
 
+  
   const isOwnPage = userId === currentUserId;
   const canEdit = isOwnPage || [1, 2].includes(currentUserId); // Bosses can edit
   const currentUserIsBoss = currentUserId === 1 || currentUserId === 2; // For permissions
@@ -629,10 +630,30 @@ export default function UserDetailPage() {
       };
 
       // Save to storage
-      saveSalaryRecord(salaryRecord);
+      await saveSalaryRecord(salaryRecord);
 
       // Show success message
       showToast(`Payment of ₱${totalAmount.toLocaleString()} submitted to ${selectedEmployee}. Waiting for confirmation.`, 'success');
+
+      // Refresh data without page reload
+      const freshData = await getSalaryRecords();
+      // Convert snake_case to camelCase
+      const converted = freshData.map(r => ({
+        id: r.id,
+        userId: r.user_id,
+        employeeId: r.employee_id,
+        type: r.type,
+        description: r.description,
+        amount: r.amount,
+        workPeriodStart: r.work_period_start,
+        workPeriodEnd: r.work_period_end,
+        dueDate: r.due_date,
+        paidDate: r.paid_date,
+        status: r.status,
+        confirmedByEmployee: r.confirmed_by_employee,
+        createdAt: r.created_at
+      }));
+      setAllSalaryRecords(converted);
 
       // Reset form and close modal
       setSelectedEmployee('Larina');
@@ -693,6 +714,7 @@ export default function UserDetailPage() {
   const handleSalaryConfirmationForEmployee = async (paymentId: string) => {
     try {
       console.log('🔍 Confirming payment:', paymentId);
+      console.log('🔍 Payment ID type:', typeof paymentId, 'Payment ID length:', paymentId?.length);
 
       // Find the payment in the ALL salary records (not just employee records)
       const payment = allSalaryRecords.find(s => s.id === paymentId);
@@ -701,16 +723,17 @@ export default function UserDetailPage() {
 
       if (payment) {
         // Update the payment status to paid and mark as confirmed by employee
+        // Convert to camelCase for saveSalaryRecord function
         const updatedPayment = {
           ...payment,
           status: 'paid',
-          paid_date: new Date().toISOString(), // Use Supabase column name
-          confirmed_by_employee: true, // Use Supabase column name
-          updated_at: new Date().toISOString() // Use Supabase column name
+          paidDate: new Date().toISOString(), // Convert to camelCase
+          confirmedByEmployee: true, // Convert to camelCase
+          updatedAt: new Date().toISOString() // Convert to camelCase
         };
 
         console.log('💾 Saving updated payment:', updatedPayment);
-                    console.log('📝 Payment type being saved:', updatedPayment.type);
+        console.log('📝 Payment type being saved:', updatedPayment.type);
 
         await saveSalaryRecord(updatedPayment);
         showToast('Payment receipt confirmed! Thank you.', 'success');
@@ -724,7 +747,8 @@ export default function UserDetailPage() {
       }
     } catch (error) {
       console.error('❌ Confirmation error:', error);
-      showToast(`Failed to confirm payment: ${error}`, 'error');
+      const errorMessage = error?.message || String(error);
+      showToast(`Failed to confirm payment: ${errorMessage}`, 'error');
     }
   };
 
@@ -1996,31 +2020,68 @@ console.log('💼 Boss view isBoss:', isBoss);
                     }
 
                     return (
-                      <div className="space-y-3">
-                        {bossPendingSalaries.map((payment) => (
-                          <div key={payment.id} className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                                  <span className="text-green-700 font-semibold text-xs">L</span>
-                                </div>
-                                <div>
-                                  <div className="font-medium text-gray-900 text-xs">Payment</div>
-                                  <div className="text-[10px] text-gray-500">{payment.payment_month || payment.description}</div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-bold text-green-700">{formatCurrency(payment.amount || 0)}</div>
-                                <button
-                                  onClick={() => handleSalaryConfirmationForEmployee(payment.id)}
-                                  className="px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600 transition-colors font-medium mt-1"
-                                >
-                                  Process Payment
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                      <div className="overflow-x-auto mt-4">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                              <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Type</th>
+                              <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Description</th>
+                              <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Work Period</th>
+                              <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Amount</th>
+                              <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Due Date</th>
+                              <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {bossPendingSalaries.map((payment) => {
+                              const paymentType = payment.type?.toLowerCase() || 'other';
+                              const isReimbursement = paymentType === 'reimbursement' || paymentType === 'reimburse';
+                              return (
+                                <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
+                                  <td className="py-2 px-3">
+                                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                      isReimbursement
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : paymentType === 'salary'
+                                          ? 'bg-purple-100 text-purple-700'
+                                          : paymentType === 'bonus'
+                                            ? 'bg-yellow-100 text-yellow-700'
+                                            : 'bg-green-100 text-green-700'
+                                    }`}>
+                                      {isReimbursement ? '🏢 Reimburse' :
+                                       paymentType === 'salary' ? '💰 Salary' :
+                                       paymentType === 'bonus' ? '🎁 Bonus' :
+                                       '📋 Other'}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-3 text-xs font-semibold text-gray-800">
+                                    {payment.description || 'Pending payment'}
+                                    <span className="text-gray-500 ml-2">(Larina)</span>
+                                  </td>
+                                  <td className="py-2 px-3 text-xs text-gray-600">
+                                    {(payment.type === 'Salary' || payment.type === 'Regular Salary') && payment.workPeriodStart && payment.workPeriodEnd
+                                      ? `${new Date(payment.workPeriodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(payment.workPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                                      : '-'}
+                                  </td>
+                                  <td className="py-2 px-3 text-xs font-bold text-green-700">
+                                    ₱{payment.amount?.toLocaleString() || '0'}
+                                  </td>
+                                  <td className="py-2 px-3 text-xs text-gray-600">
+                                    {payment.dueDate ? new Date(payment.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+                                  </td>
+                                  <td className="py-2 px-3 text-xs">
+                                    <button
+                                      onClick={() => handleSalaryConfirmationForEmployee(payment.id)}
+                                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs transition font-medium"
+                                    >
+                                      Process Payment
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     );
                   })()}
@@ -2135,32 +2196,68 @@ console.log('💼 Boss view isBoss:', isBoss);
                       </div>
 
                       {employeePendingPayments.length > 0 ? (
-                        <div className="divide-y divide-gray-100">
-                          {employeePendingPayments.map((payment) => (
-                            <div key={payment.id} className="flex items-center justify-between p-4 hover:bg-gray-50">
-                              {/* User info with avatar */}
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                  <span className="text-green-700 font-semibold text-sm">L</span>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">Larina</p>
-                                  <p className="text-sm text-gray-500">{payment.paymentMonth}</p>
-                                </div>
-                              </div>
-
-                              {/* Amount and confirm button - vertically centered */}
-                              <div className="flex items-center gap-4">
-                                <span className="text-lg font-semibold text-green-600">{formatCurrency(payment.amount)}</span>
-                                <button
-                                  onClick={() => handleSalaryConfirmationForEmployee(payment.id)}
-                                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium text-sm"
-                                >
-                                  Confirm Receipt
-                                </button>
-                              </div>
-                            </div>
-                          ))}
+                        <div className="overflow-x-auto mt-4">
+                          <table className="w-full text-sm">
+                            <thead className="bg-gray-50 border-b border-gray-200">
+                              <tr>
+                                <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Type</th>
+                                <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Description</th>
+                                <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Work Period</th>
+                                <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Amount</th>
+                                <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Due Date</th>
+                                <th className="text-left py-2 px-3 font-semibold text-gray-700 text-xs">Action</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {employeePendingPayments.map((payment) => {
+                                const paymentType = payment.type?.toLowerCase() || 'other';
+                                const isReimbursement = paymentType === 'reimbursement' || paymentType === 'reimburse';
+                                return (
+                                  <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="py-2 px-3">
+                                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                        isReimbursement
+                                          ? 'bg-blue-100 text-blue-700'
+                                          : paymentType === 'salary'
+                                            ? 'bg-purple-100 text-purple-700'
+                                            : paymentType === 'bonus'
+                                              ? 'bg-yellow-100 text-yellow-700'
+                                              : 'bg-green-100 text-green-700'
+                                      }`}>
+                                        {isReimbursement ? '🏢 Reimburse' :
+                                         paymentType === 'salary' ? '💰 Salary' :
+                                         paymentType === 'bonus' ? '🎁 Bonus' :
+                                         '📋 Other'}
+                                      </span>
+                                    </td>
+                                    <td className="py-2 px-3 text-xs font-semibold text-gray-800">
+                                      {payment.description || 'Pending payment'}
+                                      <span className="text-gray-500 ml-2">(Larina)</span>
+                                    </td>
+                                    <td className="py-2 px-3 text-xs text-gray-600">
+                                      {(payment.type === 'Salary' || payment.type === 'Regular Salary') && payment.workPeriodStart && payment.workPeriodEnd
+                                        ? `${new Date(payment.workPeriodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date(payment.workPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                                        : '-'}
+                                    </td>
+                                    <td className="py-2 px-3 text-xs font-bold text-green-700">
+                                      ₱{payment.amount?.toLocaleString() || '0'}
+                                    </td>
+                                    <td className="py-2 px-3 text-xs text-gray-600">
+                                      {payment.dueDate ? new Date(payment.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+                                    </td>
+                                    <td className="py-2 px-3 text-xs">
+                                      <button
+                                        onClick={() => handleSalaryConfirmationForEmployee(payment.id)}
+                                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs transition font-medium"
+                                      >
+                                        Confirm Receipt
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
                       ) : (
                         <div className="text-center py-8 text-gray-500">

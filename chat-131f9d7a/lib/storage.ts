@@ -41,38 +41,59 @@ export async function getSalaryRecordsForEmployee(employeeId: number): Promise<S
 
 export async function saveSalaryRecord(record: SalaryRecord): Promise<void> {
   try {
-    // Map JavaScript property names to Supabase column names
+    // Convert camelCase to snake_case for Supabase
     const supabaseRecord = {
       id: record.id,
-      user_id: record.userId || record.user_id,
-      employee_id: record.employeeId || record.employee_id,
-      type: record.type || 'Salary',
-      description: record.description || 'Salary payment',
+      user_id: record.userId,
+      employee_id: record.employeeId,
+      type: record.type,
+      description: record.description,
       amount: record.amount,
-      work_period_start: record.workPeriodStart || record.work_period_start,
-      work_period_end: record.workPeriodEnd || record.work_period_end,
-      due_date: record.dueDate || record.due_date,
-      paid_date: record.paidDate || record.paid_date,
-      status: record.status,
-      confirmed_by_employee: record.confirmedByEmployee || record.confirmed_by_employee || false,
-      created_at: record.createdAt || record.created_at || new Date().toISOString()
+      work_period_start: record.workPeriodStart || null,
+      work_period_end: record.workPeriodEnd || null,
+      due_date: record.dueDate,
+      paid_date: record.paidDate || null,
+      status: record.status || 'pending',
+      confirmed_by_employee: record.confirmedByEmployee || false,
+      created_at: record.createdAt || new Date().toISOString(),
+      updated_at: record.updatedAt || new Date().toISOString()
     };
 
     console.log('💾 Saving to Supabase:', supabaseRecord);
 
-    const { data, error } = await supabase
-      .from('salary_records')
-      .upsert(supabaseRecord)
-      .select();
+    // Check if this is an update (has paid_date) or insert
+    const isUpdate = record.paid_date || record.confirmedByEmployee;
+
+    let data, error;
+    if (isUpdate) {
+      // Update existing record
+      const { data: updateData, error: updateError } = await supabase
+        .from('salary_records')
+        .update(supabaseRecord)
+        .eq('id', record.id)
+        .select();
+
+      data = updateData;
+      error = updateError;
+    } else {
+      // Insert new record
+      const { data: insertData, error: insertError } = await supabase
+        .from('salary_records')
+        .insert([supabaseRecord])
+        .select();
+
+      data = insertData;
+      error = insertError;
+    }
 
     if (error) {
-      console.error('❌ Supabase save error:', error);
+      console.error('❌ Supabase error:', error);
       throw error;
     }
 
     console.log('✅ Saved successfully:', data);
   } catch (error) {
-    console.error('❌ Failed to save:', error);
+    console.error('❌ Save failed:', error);
     throw error;
   }
 }
@@ -94,7 +115,7 @@ export async function confirmSalaryPayment(paymentId: number): Promise<{ success
     return { success: true, message: 'Payment confirmed successfully' };
   } catch (error) {
     console.error('❌ Confirmation failed:', error);
-    return { success: false, message: 'Failed to confirm payment' };
+    return { success: false, message: error.message || String(error) };
   }
 }
 
